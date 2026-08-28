@@ -1,4 +1,13 @@
 package com.example.task_manager.dtos;
 
-public record LabelRecordsDto() {
-}
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.NotBlank;
+
+public record LabelRecordsDto(
+        @NotBlank
+        @Max(60)
+        String name,
+
+        @NotBlank
+        String color
+) {};
