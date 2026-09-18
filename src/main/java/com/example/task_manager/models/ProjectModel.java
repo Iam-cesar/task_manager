@@ -1,29 +1,55 @@
 package com.example.task_manager.models;
 
+import com.example.task_manager.entities.BaseEntity;
 import com.example.task_manager.enums.ProjectStatusEnum;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
+import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-import java.time.LocalDateTime;
-
+@Getter
 @Entity
-@Table(name = "TB_PROJECTS")
-public class ProjectModel {
+@NoArgsConstructor
+@Table(
+        name = "TB_PROJECTS",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_projects_user_name",
+                columnNames = {"user_id", "name"}
+        ),
+        indexes = {
+                @Index(name = "idx_projects_status", columnList = "status")
+        }
+)
+public class ProjectModel extends BaseEntity {
+    @Setter
+    @Version
+    private Long version;
+
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.AUTO, generator = "projects_seq")
+    @SequenceGenerator(
+            name = "projects_seq",
+            sequenceName = "projects_seq",
+            allocationSize = 50
+    )
     private Long id;
 
     @NotBlank
-    @Max(60)
+    @Size(max = 60)
+    @Column(nullable = false, length = 60)
+    @Setter
     private String name;
 
-    @Max(255)
+    @Setter
+    @Size(max = 255)
+    @Column(length = 255)
     private String description;
 
+    @Setter
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(
@@ -35,69 +61,18 @@ public class ProjectModel {
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    private ProjectStatusEnum status;
+    @Column(nullable = false, length = 20)
+    private ProjectStatusEnum status = ProjectStatusEnum.ACTIVE;
 
-    @CreationTimestamp
-    @Column(updatable = false, nullable = false)
-    private LocalDateTime createdAt;
-
-    @UpdateTimestamp
-    @Column(nullable = false)
-    private LocalDateTime updatedAt;
-
-    public Long getId() {
-        return id;
+    public void activate() {
+        this.status = ProjectStatusEnum.ACTIVE;
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    public void deactivate() {
+        this.status = ProjectStatusEnum.INACTIVE;
     }
 
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public UserModel getUser() {
-        return user;
-    }
-
-    public void setUser(UserModel user) {
-        this.user = user;
-    }
-
-    public ProjectStatusEnum getStatus() {
-        return status;
-    }
-
-    public void setStatus(ProjectStatusEnum status) {
-        this.status = status;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
+    public boolean isActive() {
+        return this.status == ProjectStatusEnum.ACTIVE;
     }
 }

@@ -1,5 +1,8 @@
 package com.example.task_manager.enums;
 
+import lombok.Getter;
+
+@Getter
 public enum TaskStatusEnum {
     PENDING("pending"),
     RUNNING("running"),
@@ -11,6 +14,4 @@ public enum TaskStatusEnum {
     TaskStatusEnum(String value) {
         this.value = value;
     }
-
-    public String getValue() { return this.value; }
 }

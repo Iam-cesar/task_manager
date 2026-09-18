@@ -1,24 +1,32 @@
 package com.example.task_manager.dtos;
 
 import com.example.task_manager.enums.TaskPriorityEnum;
-import jakarta.validation.constraints.Max;
+import com.example.task_manager.enums.TaskStatusEnum;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+
+import java.util.Set;
 
 public record TaskRecordDto(
         @NotBlank
-        @Max(60)
+        @Size(max = 60)
         String title,
 
-        @Max(255)
+        @Size(max = 255)
         String description,
 
-        Long tagId,
+        Set<Long> labelIds,
 
+        @NotNull
         Long userId,
 
+        @NotNull
         Long projectId,
 
-        TaskRecordDto taskStatus,
+        @NotNull
+        TaskStatusEnum taskStatus,
 
+        @NotNull
         TaskPriorityEnum taskPriority
-) {};
+) {}

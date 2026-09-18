@@ -1,45 +1,84 @@
 package com.example.task_manager.models;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.hibernate.Hibernate;
+
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Set;
 
 @Entity
+@NoArgsConstructor
 @Table(name = "TB_LABELS")
 public class LabelModel {
+    @Getter
+    @Setter
+    @Version
+    private Long version;
+
+
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @Getter
+    @GeneratedValue(strategy = GenerationType.AUTO, generator = "labels_seq")
+    @SequenceGenerator(
+            name = "labels_seq",
+            sequenceName = "labels_seq",
+            allocationSize = 50
+    )
     private Long id;
 
-    @Max(60)
+    @Setter
+    @Getter
     @NotBlank
-    @Column(nullable = false, unique = true)
+    @Size(max = 60)
+    @Column(
+            nullable = false,
+            unique = true,
+            length = 60
+    )
     private String name;
 
+    @Setter
+    @Getter
     @NotBlank
+    @Column(nullable = false, length = 20)
     private String color;
 
-    public Long getId() {
-        return id;
+    @ManyToMany(mappedBy = "labels")
+    private Set<TaskModel> tasks = new HashSet<>();
+
+    @PreRemove
+    private void removeLabelFromTasks() {
+        for (TaskModel task : new HashSet<>(tasks)) {
+            task.removeLabel(this);
+        }
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    Set<TaskModel> internalTasks() {
+        return tasks;
     }
 
-    public String getName() {
-        return name;
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || Hibernate.getClass(this) != Hibernate.getClass(o))
+            return false;
+        LabelModel that = (LabelModel) o;
+        return id != null && Objects.equals(id, that.getId());
     }
 
-    public void setName(String name) {
-        this.name = name;
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
     }
 
-    public String getColor() {
-        return color;
-    }
-
-    public void setColor(String color) {
-        this.color = color;
+    public Set<TaskModel> getTasks() {
+        return Collections.unmodifiableSet(tasks);
     }
 }

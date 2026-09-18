@@ -1,62 +1,96 @@
 package com.example.task_manager.models;
 
+import com.example.task_manager.entities.BaseEntity;
 import com.example.task_manager.enums.TaskPriorityEnum;
 import com.example.task_manager.enums.TaskStatusEnum;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.hibernate.Hibernate;
 import org.hibernate.annotations.ColumnDefault;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
+@Getter
 @Entity
-@Table(name = "TB_TASKS")
-public class TaskModel {
+@NoArgsConstructor
+@Table(
+        name = "TB_TASKS",
+        indexes = {
+                @Index(name = "idx_tasks_project", columnList = "project_id"),
+                @Index(name = "idx_tasks_user",    columnList = "user_id"),
+                @Index(name = "idx_tasks_status",  columnList = "status"),
+                @Index(name = "idx_tasks_due_date", columnList = "dueDate")
+        }
+)
+public class TaskModel extends BaseEntity {
+    @Setter
+    @Version
+    private Long version;
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.AUTO, generator = "tasks_seq")
+    @SequenceGenerator(
+            name = "tasks_seq",
+            sequenceName = "tasks_seq",
+            allocationSize = 50
+    )
     private Long id;
 
     @NotBlank
-    @Max(60)
+    @Size(max = 60)
+    @Column(nullable = false, length = 60)
+    @Setter
     private String title;
 
-    @Max(255)
+    @Size(max = 255)
+    @Column(length = 255)
+    @Setter
     private String description;
 
     @NotNull
+    @Setter
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(
             name = "project_id",
             nullable = false,
-            foreignKey = @ForeignKey(name = "fk_project_id"))
+            foreignKey = @ForeignKey(name = "fk_tasks_project"))
     private ProjectModel project;
 
     @NotNull
+    @Setter
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(
             name = "user_id",
             nullable = false,
-            foreignKey = @ForeignKey(name = "fk_user_id")
+            foreignKey = @ForeignKey(name = "fk_tasks_user")
     )
     private UserModel user;
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    private TaskStatusEnum status;
+    @Column(nullable = false, length = 20)
+    private TaskStatusEnum status = TaskStatusEnum.PENDING;
 
     @NotNull
+    @Setter
     @Enumerated(EnumType.STRING)
-    private TaskPriorityEnum priority;
+    @Column(nullable = false, length = 20)
+    private TaskPriorityEnum priority = TaskPriorityEnum.MEDIUM;
 
+    @Setter
     private LocalDateTime dueDate;
 
-    private LocalDateTime completionDate;
+    private Instant completionDate;
 
     @Column(nullable = false)
     @ColumnDefault("false")
@@ -74,115 +108,82 @@ public class TaskModel {
     )
     private Set<LabelModel> labels = new HashSet<>();
 
-    @CreationTimestamp
-    @Column(nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @UpdateTimestamp
-    @Column(nullable = false)
-    private LocalDateTime updatedAt;
-
-    public Long getId() {
-        return id;
+    public void start() {
+        this.status = TaskStatusEnum.RUNNING;
+        this.completionDate = null;
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    public void complete() {
+        this.status = TaskStatusEnum.COMPLETED;
+        this.completionDate = Instant.now();
     }
 
-    public String getTitle() {
-        return title;
+    public void cancel() {
+        this.status = TaskStatusEnum.CANCELED;
+        this.completionDate = null;
     }
 
-    public void setTitle(String title) {
-        this.title = title;
+    public void reopen() {
+        this.status = TaskStatusEnum.PENDING;
+        this.completionDate = null;
     }
 
-    public String getDescription() {
-        return description;
+    public void changeStatus(TaskStatusEnum newStatus) {
+        Objects.requireNonNull(newStatus, "status nao pode ser null");
+        switch (newStatus) {
+            case PENDING   -> reopen();
+            case RUNNING   -> start();
+            case CANCELED  -> cancel();
+            case COMPLETED -> complete();
+        }
     }
 
-    public void setDescription(String description) {
-        this.description = description;
+    public void archive() {
+        this.archived = true;
     }
 
-    public ProjectModel getProject() {
-        return project;
+    public void unarchive() {
+        this.archived = false;
     }
 
-    public void setProject(ProjectModel project) {
-        this.project = project;
+    public boolean isOverdue() {
+        return dueDate != null
+                && status != TaskStatusEnum.COMPLETED
+                && status != TaskStatusEnum.CANCELED
+                && dueDate.isBefore(LocalDateTime.now());
     }
 
-    public UserModel getUser() {
-        return user;
+    public void addLabel(LabelModel label) {
+        this.labels.add(label);
+        label.internalTasks().add(this);
     }
 
-    public void setUser(UserModel user) {
-        this.user = user;
+    public void removeLabel(LabelModel label) {
+        this.labels.remove(label);
+        label.internalTasks().remove(this);
     }
 
-    public TaskStatusEnum getStatus() {
-        return status;
+    public void clearLabels() {
+        for (LabelModel label : new HashSet<>(this.labels)) {
+            removeLabel(label);
+        }
     }
 
-    public void setStatus(TaskStatusEnum status) {
-        this.status = status;
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || Hibernate.getClass(this) != Hibernate.getClass(o))
+            return false;
+        TaskModel that = (TaskModel) o;
+        return id != null && Objects.equals(id, that.getId());
     }
 
-    public TaskPriorityEnum getPriority() {
-        return priority;
-    }
-
-    public void setPriority(TaskPriorityEnum priority) {
-        this.priority = priority;
-    }
-
-    public LocalDateTime getDueDate() {
-        return dueDate;
-    }
-
-    public void setDueDate(LocalDateTime dueDate) {
-        this.dueDate = dueDate;
-    }
-
-    public LocalDateTime getCompletionDate() {
-        return completionDate;
-    }
-
-    public void setCompletionDate(LocalDateTime completionDate) {
-        this.completionDate = completionDate;
-    }
-
-    public boolean isArchived() {
-        return archived;
-    }
-
-    public void setArchived(boolean archived) {
-        this.archived = archived;
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
     }
 
     public Set<LabelModel> getLabels() {
-        return labels;
-    }
-
-    public void setLabels(Set<LabelModel> labels) {
-        this.labels = labels;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
+        return Collections.unmodifiableSet(labels);
     }
 }
