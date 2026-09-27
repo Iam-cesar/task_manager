@@ -5,9 +5,9 @@ services:
       POSTGRES_DB: task_manager
       POSTGRES_USER: task_manager
       POSTGRES_PASSWORD: task_manager
-    # Descomente para acessar o banco de fora do compose:
-    # ports:
-    #   - "5432:5432"
+    # Postgres exposto no host para rodar a app fora do docker
+    ports:
+      - "5434:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -25,7 +25,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/task_manager
       SPRING_DATASOURCE_USERNAME: task_manager
       SPRING_DATASOURCE_PASSWORD: task_manager
-      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
     ports:
       - "8081:8080"
 

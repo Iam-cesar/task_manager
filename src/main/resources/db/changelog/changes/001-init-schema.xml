@@ -1,0 +1,176 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext" xmlns:pro="http://www.liquibase.org/xml/ns/pro" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd http://www.liquibase.org/xml/ns/pro http://www.liquibase.org/xml/ns/pro/liquibase-pro-latest.xsd http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+    <changeSet author="abj (generated)" id="1789759479946-1">
+        <createSequence incrementBy="50" sequenceName="labels_seq" startValue="1"/>
+    </changeSet>
+    <changeSet author="abj (generated)" id="1789759479946-2">
+        <createSequence incrementBy="50" sequenceName="projects_seq" startValue="1"/>
+    </changeSet>
+    <changeSet author="abj (generated)" id="1789759479946-3">
+        <createSequence incrementBy="50" sequenceName="tasks_seq" startValue="1"/>
+    </changeSet>
+    <changeSet author="abj (generated)" id="1789759479946-4">
+        <createSequence incrementBy="50" sequenceName="users_seq" startValue="1"/>
+    </changeSet>
+    <changeSet author="abj (generated)" id="1789759479946-5">
+        <createTable tableName="tb_labels">
+            <column name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="tb_labelsPK"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP(6) WITH TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP(6) WITH TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="BIGINT"/>
+            <column name="color" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(60)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="abj (generated)" id="1789759479946-6">
+        <createTable tableName="tb_projects">
+            <column name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="tb_projectsPK"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP(6) WITH TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP(6) WITH TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="BIGINT"/>
+            <column name="description" type="VARCHAR(255)"/>
+            <column name="name" type="VARCHAR(60)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="abj (generated)" id="1789759479946-7">
+        <createTable tableName="tb_tasks">
+            <column name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="tb_tasksPK"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP(6) WITH TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP(6) WITH TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="BIGINT"/>
+            <column defaultValueBoolean="false" name="archived" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column name="completion_date" type="TIMESTAMP(6) WITH TIME ZONE"/>
+            <column name="description" type="VARCHAR(255)"/>
+            <column name="due_date" type="TIMESTAMP(6) WITH TIME ZONE"/>
+            <column name="priority" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="title" type="VARCHAR(60)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="project_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="abj (generated)" id="1789759479946-8">
+        <createTable tableName="tb_tasks_labels">
+            <column name="task_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="tb_tasks_labelsPK"/>
+            </column>
+            <column name="label_id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="tb_tasks_labelsPK"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="abj (generated)" id="1789759479946-9">
+        <createTable tableName="tb_users">
+            <column name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="tb_usersPK"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP(6) WITH TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP(6) WITH TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="BIGINT"/>
+            <column name="email" type="VARCHAR(254)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(60)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="abj (generated)" id="1789759479946-10">
+        <addUniqueConstraint columnNames="name" constraintName="UC_TB_LABELSNAME_COL" tableName="tb_labels"/>
+    </changeSet>
+    <changeSet author="abj (generated)" id="1789759479946-11">
+        <addUniqueConstraint columnNames="email" constraintName="UC_TB_USERSEMAIL_COL" tableName="tb_users"/>
+    </changeSet>
+    <changeSet author="abj (generated)" id="1789759479946-12">
+        <addUniqueConstraint columnNames="user_id, name" constraintName="uk_projects_user_name" tableName="tb_projects"/>
+    </changeSet>
+    <changeSet author="abj (generated)" id="1789759479946-13">
+        <createIndex indexName="idx_projects_status" tableName="tb_projects">
+            <column name="status"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="abj (generated)" id="1789759479946-14">
+        <createIndex indexName="idx_tasks_due_date" tableName="tb_tasks">
+            <column name="due_date"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="abj (generated)" id="1789759479946-15">
+        <createIndex indexName="idx_tasks_project" tableName="tb_tasks">
+            <column name="project_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="abj (generated)" id="1789759479946-16">
+        <createIndex indexName="idx_tasks_status" tableName="tb_tasks">
+            <column name="status"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="abj (generated)" id="1789759479946-17">
+        <createIndex indexName="idx_tasks_user" tableName="tb_tasks">
+            <column name="user_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="abj (generated)" id="1789759479946-18">
+        <addForeignKeyConstraint baseColumnNames="user_id" baseTableName="tb_projects" constraintName="fk_projects_user" deferrable="false" initiallyDeferred="false" referencedColumnNames="id" referencedTableName="tb_users" validate="true"/>
+    </changeSet>
+    <changeSet author="abj (generated)" id="1789759479946-19">
+        <addForeignKeyConstraint baseColumnNames="label_id" baseTableName="tb_tasks_labels" constraintName="fk_tasks_labels_label" deferrable="false" initiallyDeferred="false" referencedColumnNames="id" referencedTableName="tb_labels" validate="true"/>
+    </changeSet>
+    <changeSet author="abj (generated)" id="1789759479946-20">
+        <addForeignKeyConstraint baseColumnNames="task_id" baseTableName="tb_tasks_labels" constraintName="fk_tasks_labels_task" deferrable="false" initiallyDeferred="false" referencedColumnNames="id" referencedTableName="tb_tasks" validate="true"/>
+    </changeSet>
+    <changeSet author="abj (generated)" id="1789759479946-21">
+        <addForeignKeyConstraint baseColumnNames="project_id" baseTableName="tb_tasks" constraintName="fk_tasks_project" deferrable="false" initiallyDeferred="false" referencedColumnNames="id" referencedTableName="tb_projects" validate="true"/>
+    </changeSet>
+    <changeSet author="abj (generated)" id="1789759479946-22">
+        <addForeignKeyConstraint baseColumnNames="user_id" baseTableName="tb_tasks" constraintName="fk_tasks_user" deferrable="false" initiallyDeferred="false" referencedColumnNames="id" referencedTableName="tb_users" validate="true"/>
+    </changeSet>
+</databaseChangeLog>
