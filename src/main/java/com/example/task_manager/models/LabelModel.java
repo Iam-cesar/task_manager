@@ -1,5 +1,6 @@
 package com.example.task_manager.models;
 
+import com.example.task_manager.entities.BaseEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -16,22 +17,16 @@ import java.util.Set;
 @Entity
 @NoArgsConstructor
 @Table(name = "TB_LABELS")
-public class LabelModel {
-    @Getter
-    @Setter
-    @Version
-    private Long version;
-
-
+public class LabelModel extends BaseEntity {
     @Id
     @Getter
-    @GeneratedValue(strategy = GenerationType.AUTO, generator = "labels_seq")
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "labels_seq")
     @SequenceGenerator(
             name = "labels_seq",
             sequenceName = "labels_seq",
             allocationSize = 50
     )
-    private Long id;
+    private Integer id;
 
     @Setter
     @Getter
@@ -66,16 +61,14 @@ public class LabelModel {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || Hibernate.getClass(this) != Hibernate.getClass(o))
-            return false;
+        if (o == null || getClass() != o.getClass()) return false;
         LabelModel that = (LabelModel) o;
-        return id != null && Objects.equals(id, that.getId());
+        return Objects.equals(id, that.id);
     }
 
     @Override
     public int hashCode() {
-        return getClass().hashCode();
+        return Objects.hashCode(id);
     }
 
     public Set<TaskModel> getTasks() {

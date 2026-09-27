@@ -2,7 +2,9 @@ package com.example.task_manager.entities;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.MappedSuperclass;
+import jakarta.persistence.Version;
 import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -11,12 +13,16 @@ import java.time.Instant;
 @Getter
 @MappedSuperclass
 public abstract class BaseEntity {
+    @Setter
+    @Version
+    private Integer version;
+
     @CreationTimestamp
     @Column(updatable = false, nullable = false)
-    private Instant createdAt;
+    private Instant created_at;
 
     @UpdateTimestamp
     @Column(nullable = false)
-    private Instant updatedAt;
+    private Instant updated_at;
 
 }

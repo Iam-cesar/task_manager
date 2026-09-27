@@ -29,22 +29,18 @@ import java.util.Set;
                 @Index(name = "idx_tasks_project", columnList = "project_id"),
                 @Index(name = "idx_tasks_user",    columnList = "user_id"),
                 @Index(name = "idx_tasks_status",  columnList = "status"),
-                @Index(name = "idx_tasks_due_date", columnList = "dueDate")
+                @Index(name = "idx_tasks_due_date", columnList = "due_date")
         }
 )
 public class TaskModel extends BaseEntity {
-    @Setter
-    @Version
-    private Long version;
-
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO, generator = "tasks_seq")
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "tasks_seq")
     @SequenceGenerator(
             name = "tasks_seq",
             sequenceName = "tasks_seq",
             allocationSize = 50
     )
-    private Long id;
+    private Integer id;
 
     @NotBlank
     @Size(max = 60)
@@ -88,9 +84,9 @@ public class TaskModel extends BaseEntity {
     private TaskPriorityEnum priority = TaskPriorityEnum.MEDIUM;
 
     @Setter
-    private LocalDateTime dueDate;
+    private Instant due_date;
 
-    private Instant completionDate;
+    private Instant completion_date;
 
     @Column(nullable = false)
     @ColumnDefault("false")
@@ -110,22 +106,22 @@ public class TaskModel extends BaseEntity {
 
     public void start() {
         this.status = TaskStatusEnum.RUNNING;
-        this.completionDate = null;
+        this.completion_date = null;
     }
 
     public void complete() {
         this.status = TaskStatusEnum.COMPLETED;
-        this.completionDate = Instant.now();
+        this.completion_date = Instant.now();
     }
 
     public void cancel() {
         this.status = TaskStatusEnum.CANCELED;
-        this.completionDate = null;
+        this.completion_date = null;
     }
 
     public void reopen() {
         this.status = TaskStatusEnum.PENDING;
-        this.completionDate = null;
+        this.completion_date = null;
     }
 
     public void changeStatus(TaskStatusEnum newStatus) {
@@ -147,10 +143,10 @@ public class TaskModel extends BaseEntity {
     }
 
     public boolean isOverdue() {
-        return dueDate != null
+        return due_date != null
                 && status != TaskStatusEnum.COMPLETED
                 && status != TaskStatusEnum.CANCELED
-                && dueDate.isBefore(LocalDateTime.now());
+                && due_date.isBefore(Instant.now());
     }
 
     public void addLabel(LabelModel label) {
@@ -171,16 +167,14 @@ public class TaskModel extends BaseEntity {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || Hibernate.getClass(this) != Hibernate.getClass(o))
-            return false;
-        TaskModel that = (TaskModel) o;
-        return id != null && Objects.equals(id, that.getId());
+        if (o == null || getClass() != o.getClass()) return false;
+        TaskModel taskModel = (TaskModel) o;
+        return Objects.equals(id, taskModel.id);
     }
 
     @Override
     public int hashCode() {
-        return getClass().hashCode();
+        return Objects.hashCode(id);
     }
 
     public Set<LabelModel> getLabels() {

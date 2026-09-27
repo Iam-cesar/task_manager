@@ -11,6 +11,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.Objects;
+
 @Getter
 @Entity
 @NoArgsConstructor
@@ -25,18 +27,26 @@ import lombok.Setter;
         }
 )
 public class ProjectModel extends BaseEntity {
-    @Setter
-    @Version
-    private Long version;
-
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO, generator = "projects_seq")
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "projects_seq")
     @SequenceGenerator(
             name = "projects_seq",
             sequenceName = "projects_seq",
             allocationSize = 50
     )
-    private Long id;
+    private Integer id;
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        ProjectModel that = (ProjectModel) o;
+        return Objects.equals(id, that.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(id);
+    }
 
     @NotBlank
     @Size(max = 60)
