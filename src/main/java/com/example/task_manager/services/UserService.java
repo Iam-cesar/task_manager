@@ -6,19 +6,20 @@ import com.example.task_manager.exceptions.UserAlreadyExistsException;
 import com.example.task_manager.exceptions.UserNotFoundException;
 import com.example.task_manager.models.UserModel;
 import com.example.task_manager.repositories.UserRepository;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
+import org.springframework.beans.BeanUtils;
+import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
 
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class UserService {
 
     private final UserRepository userRepository;
-    private final String userNotFoundMessage = "Usuário não encontrado";
 
     public UserModel saveAndFlush(@NonNull UserModel user) throws UserAlreadyExistsException {
 
@@ -35,30 +36,22 @@ public class UserService {
     public List<UserModel> findAll() { return userRepository.findAll(); }
 
     public UserModel findById(int id) throws UserNotFoundException {
-        return userRepository.findById(id)
-                .orElseThrow(() -> new UserNotFoundException(userNotFoundMessage));
+        return userRepository.findById(id).orElseThrow(UserNotFoundException::new);
     }
 
-    public UserModel findByEmail(String email) {
-
-        return userRepository.findByEmail(email).orElse(null);
-    }
-
-    public UserModel update(
+    public UserModel updateAndFlush(
             int id,
-            @NonNull UpdateUserDto dto
+            @NonNull UpdateUserDto updateUserDto
     ) throws UserAlreadyExistsException {
 
         UserModel userById = findById(id);
 
-        if (existsByEmail(dto.email())) {
+        if (existsByEmail(updateUserDto.email())) {
             String userEmailConflictMessage = "Já existe um usuário com esse e-mail";
             throw new UserAlreadyExistsException(userEmailConflictMessage);
         }
 
-        if (dto.name() != null) { userById.setName(dto.name()); }
-
-        if (isEmailChanged(dto, userById.getEmail())) { userById.setEmail(dto.email()); }
+        BeanUtils.copyProperties(updateUserDto, userById);
 
         return userRepository.saveAndFlush(userById);
     }

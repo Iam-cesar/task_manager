@@ -10,7 +10,12 @@ import org.jspecify.annotations.NonNull;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.util.UriComponentsBuilder;
 
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
+
+import java.net.URI;
 import java.util.List;
 
 @RestController
@@ -22,11 +27,14 @@ public class UserController {
 
     @PostMapping
     @Transactional
-    public ResponseEntity<UserResponseDto> createUser(@RequestBody @Valid @NonNull UserModel user) {
-
+    public ResponseEntity<UserResponseDto> createUser(
+            @RequestBody @Valid @NonNull UserModel user,
+            @NonNull UriComponentsBuilder uriBuilder
+    ) {
         UserResponseDto userCreated = new UserResponseDto(userService.saveAndFlush(user));
+        URI uri = uriBuilder.path("/users/{id}").buildAndExpand(userCreated.getId()).toUri();
 
-        return ResponseEntity.ok(userCreated);
+        return ResponseEntity.created(uri).body(userCreated);
     }
 
     @GetMapping
@@ -34,6 +42,13 @@ public class UserController {
     public ResponseEntity<List<UserResponseDto>> getAllUsers() {
 
         List<UserResponseDto> users = convertUsersToList(userService.findAll());
+
+        if  (!users.isEmpty()) {
+            for (UserResponseDto user : users) {
+                int id  = user.getId();
+                user.add(linkTo(methodOn(UserController.class).getUserById(id)).withSelfRel());
+            }
+        }
 
         return ResponseEntity.ok(users);
     }
@@ -43,17 +58,18 @@ public class UserController {
     public ResponseEntity<UserResponseDto> getUserById(@PathVariable int id)  {
 
         UserResponseDto user = new UserResponseDto(userService.findById(id));
+        user.add(linkTo(methodOn(UserController.class).getAllUsers()).withSelfRel());
 
         return ResponseEntity.ok(user);
     }
 
     @PatchMapping("/{id}")
     @Transactional
-    public ResponseEntity<UserResponseDto> update (
+    public ResponseEntity<UserResponseDto> updateUser (
             @PathVariable int id,
             @RequestBody @NonNull UpdateUserDto user
     ) {
-        UserResponseDto userUpdated = new UserResponseDto(userService.update(id, user));
+        UserResponseDto userUpdated = new UserResponseDto(userService.updateAndFlush(id, user));
 
         return ResponseEntity.ok(userUpdated);
     }
