@@ -1,6 +1,7 @@
 package com.example.task_manager.infra;
 
 import com.example.task_manager.exceptions.IdNotFoundException;
+import com.example.task_manager.exceptions.ProjectNotFoundException;
 import com.example.task_manager.exceptions.UserAlreadyExistsException;
 import com.example.task_manager.exceptions.UserNotFoundException;
 import org.springframework.http.HttpStatus;
@@ -18,6 +19,12 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
         return  ResponseEntity.status(HttpStatus.NOT_FOUND).body(treatedMessage);
     };
 
+    @ExceptionHandler(ProjectNotFoundException.class)
+    private ResponseEntity<RestErrorMessage> ProjectNotFoundHandler(ProjectNotFoundException e) {
+        RestErrorMessage treatedMessage = new RestErrorMessage(HttpStatus.NOT_FOUND, e.getMessage());
+        return  ResponseEntity.status(HttpStatus.NOT_FOUND).body(treatedMessage);
+    };
+
     @ExceptionHandler(IdNotFoundException.class)
     private ResponseEntity<RestErrorMessage> IdNotFoundHandler(IdNotFoundException e) {
         RestErrorMessage treatedMessage = new RestErrorMessage(HttpStatus.NOT_FOUND, e.getMessage());
@@ -28,5 +35,11 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
     private ResponseEntity<RestErrorMessage> UserAlreadyExistsHandler(UserAlreadyExistsException e) {
         RestErrorMessage treatedMessage = new RestErrorMessage(HttpStatus.CONFLICT, e.getMessage());
         return  ResponseEntity.status(HttpStatus.CONFLICT).body(treatedMessage);
+    };
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    private ResponseEntity<RestErrorMessage> IllegalArgumentExceptionHandler(IllegalArgumentException e) {
+        RestErrorMessage treatedMessage = new RestErrorMessage(HttpStatus.BAD_REQUEST, e.getMessage());
+        return  ResponseEntity.status(HttpStatus.BAD_REQUEST).body(treatedMessage);
     };
 }
