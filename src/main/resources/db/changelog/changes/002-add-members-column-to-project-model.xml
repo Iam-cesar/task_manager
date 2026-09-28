@@ -1,0 +1,36 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+    <changeSet author="abj" id="002-1-add-project-owner">
+        <addColumn tableName="tb_projects">
+            <column name="project_owner_id" type="BIGINT"/>
+        </addColumn>
+        <sql>UPDATE tb_projects SET project_owner_id = user_id</sql>
+        <addNotNullConstraint tableName="tb_projects" columnName="project_owner_id" columnDataType="BIGINT"/>
+    </changeSet>
+    <changeSet author="abj" id="002-2-fk-project-owner">
+        <addForeignKeyConstraint baseColumnNames="project_owner_id" baseTableName="tb_projects" constraintName="fk_projects_project_owner" deferrable="false" initiallyDeferred="false" referencedColumnNames="id" referencedTableName="tb_users" validate="true"/>
+    </changeSet>
+    <changeSet author="abj" id="002-3-drop-user-id">
+        <dropForeignKeyConstraint baseTableName="tb_projects" constraintName="fk_projects_user"/>
+        <dropUniqueConstraint tableName="tb_projects" constraintName="uk_projects_user_name"/>
+        <dropColumn tableName="tb_projects" columnName="user_id"/>
+    </changeSet>
+    <changeSet author="abj" id="002-4-uk-projects-owner-name">
+        <addUniqueConstraint tableName="tb_projects" columnNames="project_owner_id, name" constraintName="uk_projects_owner_name"/>
+    </changeSet>
+    <changeSet author="abj" id="002-5-create-projects-members">
+        <createTable tableName="tb_projects_members">
+            <column name="project_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addPrimaryKey tableName="tb_projects_members" columnNames="project_id, user_id" constraintName="pk_projects_members"/>
+    </changeSet>
+    <changeSet author="abj" id="002-6-fks-projects-members">
+        <addForeignKeyConstraint baseColumnNames="project_id" baseTableName="tb_projects_members" constraintName="fk_projects_members_project" deferrable="false" initiallyDeferred="false" referencedColumnNames="id" referencedTableName="tb_projects" validate="true"/>
+        <addForeignKeyConstraint baseColumnNames="user_id" baseTableName="tb_projects_members" constraintName="fk_projects_members_user" deferrable="false" initiallyDeferred="false" referencedColumnNames="id" referencedTableName="tb_users" validate="true"/>
+    </changeSet>
+</databaseChangeLog>

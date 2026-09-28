@@ -36,14 +36,14 @@ Subir a aplicação também aplica as migrações pendentes automaticamente (`sp
    ./mvnw compile liquibase:diff
    ```
 
-   O `compile` é obrigatório, pois o plugin lê as classes compiladas dos models. O resultado é gravado em `src/main/resources/db/changelog/changes/new-changelog.xml` (definido em `diffChangeLogFile` no `liquibase.properties`). Para escolher outro nome na hora:
+   O `compile` é obrigatório, pois o plugin lê as classes compiladas dos models. O resultado é gravado em `../src/main/resources/db/changelog/changes/002-add-members-column-to-project-model.xml` (definido em `diffChangeLogFile` no `liquibase.properties`). Para escolher outro nome na hora:
 
    ```bash
-   ./mvnw compile liquibase:diff -Dliquibase.diffChangeLogFile=src/main/resources/db/changelog/changes/002-descricao.xml
+   ./mvnw compile liquibase:diff -Dliquibase.diffChangeLogFile=src/main/resources/db/changelog/changes/002-add-members-column-to-project-model.xml
    ```
 
 3. Revise o XML gerado. O diff pode sugerir drops ou alterações indesejadas.
-4. Renomeie o arquivo seguindo a sequência (ex.: `002-add-coluna-x.xml`). Se o `new-changelog.xml` continuar existindo, o próximo diff é somado a ele.
+4. Renomeie o arquivo seguindo a sequência (ex.: `002-add-coluna-x.xml`). Se o `002-add-members-column-to-project-model.xml` continuar existindo, o próximo diff é somado a ele.
 5. Registre o arquivo no `db.changelog-master.xml`:
 
    ```xml

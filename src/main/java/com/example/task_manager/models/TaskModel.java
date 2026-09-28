@@ -1,44 +1,58 @@
 package com.example.task_manager.models;
 
+import java.time.Instant;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Set;
+
+import org.hibernate.annotations.ColumnDefault;
+
 import com.example.task_manager.entities.BaseEntity;
 import com.example.task_manager.enums.TaskPriorityEnum;
 import com.example.task_manager.enums.TaskStatusEnum;
-import jakarta.persistence.*;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.ForeignKey;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.SequenceGenerator;
+import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.Hibernate;
-import org.hibernate.annotations.ColumnDefault;
-
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Set;
 
 @Getter
 @Entity
 @NoArgsConstructor
 @Table(
-        name = "TB_TASKS",
-        indexes = {
-                @Index(name = "idx_tasks_project", columnList = "project_id"),
-                @Index(name = "idx_tasks_user",    columnList = "user_id"),
-                @Index(name = "idx_tasks_status",  columnList = "status"),
-                @Index(name = "idx_tasks_due_date", columnList = "due_date")
-        }
+    name = "TB_TASKS",
+    indexes = {
+        @Index(name = "idx_tasks_project", columnList = "project_id"),
+        @Index(name = "idx_tasks_user",    columnList = "user_id"),
+        @Index(name = "idx_tasks_status",  columnList = "status"),
+        @Index(name = "idx_tasks_due_date", columnList = "due_date")
+    }
 )
 public class TaskModel extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "tasks_seq")
     @SequenceGenerator(
             name = "tasks_seq",
-            sequenceName = "tasks_seq",
-            allocationSize = 50
+            sequenceName = "tasks_seq"
     )
     private Integer id;
 

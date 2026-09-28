@@ -23,8 +23,7 @@ public class LabelModel extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "labels_seq")
     @SequenceGenerator(
             name = "labels_seq",
-            sequenceName = "labels_seq",
-            allocationSize = 50
+            sequenceName = "labels_seq"
     )
     private Integer id;
 
