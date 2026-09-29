@@ -5,6 +5,7 @@ import com.example.task_manager.dtos.ProjectResponseDto;
 import com.example.task_manager.dtos.UpdateProjectDto;
 import com.example.task_manager.models.ProjectModel;
 import com.example.task_manager.services.ProjectService;
+import org.springframework.http.HttpStatus;
 import org.springframework.transaction.annotation.Transactional;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
@@ -73,6 +74,15 @@ public class ProjectsController {
         ProjectResponseDto projectUpdated = new ProjectResponseDto(projectService.updateAndFlush(id, updateProjectDto));
 
         return ResponseEntity.ok(projectUpdated);
+    }
+
+    @DeleteMapping("/{id}")
+    @Transactional
+    public ResponseEntity<Void> deleteProject(@PathVariable int id) {
+
+        projectService.delete(id);
+
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
     private @NonNull List<ProjectResponseDto> convertProjectsToList (@NonNull List<ProjectModel> projects) {

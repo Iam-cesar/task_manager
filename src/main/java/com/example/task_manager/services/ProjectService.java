@@ -48,4 +48,13 @@ public class ProjectService {
 
         return projectRepository.saveAndFlush(projectById);
     }
+
+    public void delete(int id) {
+
+        ProjectModel projectById = findById(id);
+
+        if  (projectById != null) {
+            projectRepository.deleteById(id);
+        }
+    }
 }
