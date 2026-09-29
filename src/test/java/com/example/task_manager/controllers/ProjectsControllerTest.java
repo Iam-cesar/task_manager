@@ -5,6 +5,7 @@ import com.example.task_manager.dtos.UpdateProjectDto;
 import com.example.task_manager.dtos.UserResponseDto;
 import com.example.task_manager.enums.ProjectStatusEnum;
 import com.example.task_manager.enums.UserStatusEnum;
+import com.example.task_manager.exceptions.ProjectAlreadyExistsException;
 import com.example.task_manager.exceptions.ProjectNotFoundException;
 import com.example.task_manager.exceptions.UserNotFoundException;
 import com.example.task_manager.models.ProjectModel;
@@ -140,6 +141,27 @@ class ProjectsControllerTest {
                     .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.message", is("User not found")));
         }
+
+        @Test
+        @DisplayName("Should return 409 Conflict when project with same name already exists for user")
+        void shouldReturn409WhenProjectAlreadyExists() throws Exception {
+            when(projectService.saveAndFlush(any(CreateProjectDto.class)))
+                    .thenThrow(new ProjectAlreadyExistsException("Já existe um projeto com esse nome para este usuário"));
+
+            String requestBody = """
+                {
+                    "name": "Task Manager API",
+                    "description": "Spring Boot Project",
+                    "project_owner_id": 1
+                }
+                """;
+
+            mockMvc.perform(post("/projects")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(requestBody))
+                    .andExpect(status().isConflict())
+                    .andExpect(jsonPath("$.message", is("Já existe um projeto com esse nome para este usuário")));
+        }
     }
 
     @Nested
@@ -250,6 +272,25 @@ class ProjectsControllerTest {
                             .content(requestBody))
                     .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.message", is("Project not found")));
+        }
+
+        @Test
+        @DisplayName("Should return 409 Conflict when updating to a name already in use by the owner")
+        void shouldReturn409WhenUpdatingToExistingProjectName() throws Exception {
+            when(projectService.updateAndFlush(eq(1), any(UpdateProjectDto.class)))
+                    .thenThrow(new ProjectAlreadyExistsException("Já existe um projeto com esse nome para este usuário"));
+
+            String requestBody = """
+                {
+                    "name": "Duplicate Project Name"
+                }
+                """;
+
+            mockMvc.perform(patch("/projects/1")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(requestBody))
+                    .andExpect(status().isConflict())
+                    .andExpect(jsonPath("$.message", is("Já existe um projeto com esse nome para este usuário")));
         }
     }
 
