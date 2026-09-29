@@ -2,6 +2,7 @@ package com.example.task_manager.services;
 
 import com.example.task_manager.dtos.CreateProjectDto;
 import com.example.task_manager.dtos.UpdateProjectDto;
+import com.example.task_manager.exceptions.ProjectAlreadyExistsException;
 import com.example.task_manager.exceptions.ProjectNotFoundException;
 import com.example.task_manager.models.ProjectModel;
 import com.example.task_manager.models.UserModel;
@@ -19,15 +20,19 @@ public class ProjectService {
     private final ProjectRepository projectRepository;
     private final UserService userService;
 
-    public ProjectModel saveAndFlush(CreateProjectDto createProjectDto) throws IllegalArgumentException{
-
-        ProjectModel projectModel = new ProjectModel(createProjectDto);
+    public ProjectModel saveAndFlush(CreateProjectDto createProjectDto) throws IllegalArgumentException {
 
         if (createProjectDto.getProject_owner_id() == null) {
             throw new IllegalArgumentException("Project owner id must not be null");
         }
 
         UserModel user = userService.findById(createProjectDto.getProject_owner_id());
+
+        if (existsByOwnerIdAndName(user.getId(), createProjectDto.getName())) {
+            throw new ProjectAlreadyExistsException("Já existe um projeto com esse nome para este usuário");
+        }
+
+        ProjectModel projectModel = new ProjectModel(createProjectDto);
         projectModel.setProject_owner(user);
 
         return projectRepository.saveAndFlush(projectModel);
@@ -42,9 +47,19 @@ public class ProjectService {
     }
 
     public ProjectModel updateAndFlush(int id, UpdateProjectDto updateProjectDto) {
+
         ProjectModel projectById = findById(id);
 
-        BeanUtils.copyProperties(updateProjectDto, projectById);
+        if (updateProjectDto.name() != null && !updateProjectDto.name().equals(projectById.getName())) {
+            if (existsByOwnerIdAndName(projectById.getProject_owner().getId(), updateProjectDto.name())) {
+                throw new ProjectAlreadyExistsException("Já existe um projeto com esse nome para este usuário");
+            }
+            projectById.setName(updateProjectDto.name());
+        }
+
+        if (updateProjectDto.description() != null) {
+            projectById.setDescription(updateProjectDto.description());
+        }
 
         return projectRepository.saveAndFlush(projectById);
     }
@@ -53,8 +68,12 @@ public class ProjectService {
 
         ProjectModel projectById = findById(id);
 
-        if  (projectById != null) {
+        if (projectById != null) {
             projectRepository.deleteById(id);
         }
+    }
+
+    public boolean existsByOwnerIdAndName(Integer ownerId, String name) {
+        return projectRepository.existsByProjectOwnerIdAndName(ownerId, name);
     }
 }
