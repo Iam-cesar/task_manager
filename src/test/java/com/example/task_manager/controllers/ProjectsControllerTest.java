@@ -30,7 +30,10 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -245,6 +248,30 @@ class ProjectsControllerTest {
             mockMvc.perform(patch("/projects/999")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(requestBody))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.message", is("Project not found")));
+        }
+    }
+
+    @Nested
+    @DisplayName("DELETE /projects/{id}")
+    class DeleteProjectTests {
+
+        @Test
+        @DisplayName("Should return 204 No Content when deleting existing project")
+        void shouldDeleteProjectSuccessfully() throws Exception {
+            doNothing().when(projectService).delete(1);
+
+            mockMvc.perform(delete("/projects/1"))
+                    .andExpect(status().isNoContent());
+        }
+
+        @Test
+        @DisplayName("Should return 404 Not Found when deleting non-existing project")
+        void shouldReturn404WhenDeletingNonExistingProject() throws Exception {
+            doThrow(new ProjectNotFoundException("Project not found")).when(projectService).delete(999);
+
+            mockMvc.perform(delete("/projects/999"))
                     .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.message", is("Project not found")));
         }
