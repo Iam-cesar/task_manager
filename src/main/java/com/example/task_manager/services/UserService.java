@@ -1,7 +1,6 @@
 package com.example.task_manager.services;
 
 import com.example.task_manager.dtos.UpdateUserDto;
-import com.example.task_manager.enums.UserStatusEnum;
 import com.example.task_manager.exceptions.UserAlreadyExistsException;
 import com.example.task_manager.exceptions.UserNotFoundException;
 import com.example.task_manager.models.UserModel;
@@ -9,7 +8,6 @@ import com.example.task_manager.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
 import org.springframework.beans.BeanUtils;
-import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -59,7 +57,7 @@ public class UserService {
     public UserModel status(int id) {
         UserModel userById = findById(id);
 
-        return userById.getStatus() ==  UserStatusEnum.ACTIVE
+        return userById.isActive()
                 ? deactivate(userById)
                 : activate(userById);
     }
@@ -85,9 +83,5 @@ public class UserService {
 
     public boolean existsByEmail(String email) {
         return userRepository.findByEmail(email).isPresent();
-    }
-
-    private boolean isEmailChanged(@NonNull UpdateUserDto dto, String userByIdEmail) {
-        return dto.email() != null && !dto.email().equals(userByIdEmail);
     }
 }
