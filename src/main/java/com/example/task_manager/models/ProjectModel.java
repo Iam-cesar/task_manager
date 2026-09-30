@@ -63,7 +63,7 @@ public class ProjectModel extends BaseEntity {
 
     @Setter
     @Size(max = 255)
-    @Column(length = 255)
+    @Column()
     private String description;
 
     @Setter
