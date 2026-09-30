@@ -27,8 +27,7 @@ public class ProjectsController {
 
     private final ProjectService projectService;
 
-    @PostMapping()
-    @Transactional
+    @PostMapping
     public ResponseEntity<ProjectResponseDto> createProject(
             @RequestBody @Valid @NonNull CreateProjectDto project,
             @NonNull UriComponentsBuilder uriBuilder
@@ -39,21 +38,33 @@ public class ProjectsController {
         return ResponseEntity.created(uri).body(projectCreated);
     }
 
+    @PostMapping("/{id}/status")
+    public ResponseEntity<ProjectResponseDto> status(@PathVariable int id) {
+        ProjectResponseDto projectResponseDto = new ProjectResponseDto(projectService.status(id));
+
+        return ResponseEntity.ok(projectResponseDto);
+    }
+
+    @PostMapping("/{id}/add-members")
+    public ResponseEntity<ProjectResponseDto> addMembers(@PathVariable int id, List<Integer> member_ids) {
+        ProjectResponseDto projectResponseDto = new ProjectResponseDto(projectService.addMembers(id, member_ids));
+
+        return ResponseEntity.ok(projectResponseDto);
+    }
+
     @GetMapping("/{id}")
-    @Transactional(readOnly = true)
     public ResponseEntity<ProjectResponseDto> getProjectById(@PathVariable int id) {
 
         ProjectResponseDto project = new ProjectResponseDto(projectService.findById(id));
-        project.add(linkTo(methodOn(ProjectsController.class).getAllProjects()).withSelfRel());
+        project.add(linkTo(methodOn(ProjectsController.class).getAllProjects()).withRel("projects"));
 
         return ResponseEntity.ok(project);
     }
 
     @GetMapping
-    @Transactional(readOnly = true)
     public ResponseEntity<List<ProjectResponseDto>> getAllProjects() {
 
-        List<ProjectResponseDto> projects = convertProjectsToList(projectService.findAll());
+        List<ProjectResponseDto> projects = convertProjectsToList(projectService.findAllWithRelations());
 
         if  (!projects.isEmpty()) {
             for (ProjectResponseDto project : projects) {
@@ -66,7 +77,6 @@ public class ProjectsController {
     }
 
     @PatchMapping("/{id}")
-    @Transactional
     public ResponseEntity<ProjectResponseDto> updateProject(
             @PathVariable int id,
             @Valid @NonNull @RequestBody UpdateProjectDto updateProjectDto
@@ -77,12 +87,10 @@ public class ProjectsController {
     }
 
     @DeleteMapping("/{id}")
-    @Transactional
     public ResponseEntity<Void> deleteProject(@PathVariable int id) {
-
         projectService.delete(id);
 
-        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+        return ResponseEntity.noContent().build();
     }
 
     private @NonNull List<ProjectResponseDto> convertProjectsToList (@NonNull List<ProjectModel> projects) {

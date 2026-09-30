@@ -26,7 +26,6 @@ public class UserController {
     private final UserService userService;
 
     @PostMapping
-    @Transactional
     public ResponseEntity<UserResponseDto> createUser(
             @RequestBody @Valid @NonNull UserModel user,
             @NonNull UriComponentsBuilder uriBuilder
@@ -38,7 +37,6 @@ public class UserController {
     }
 
     @GetMapping
-    @Transactional(readOnly = true)
     public ResponseEntity<List<UserResponseDto>> getAllUsers() {
 
         List<UserResponseDto> users = convertUsersToList(userService.findAll());
@@ -54,17 +52,15 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    @Transactional(readOnly = true)
     public ResponseEntity<UserResponseDto> getUserById(@PathVariable int id)  {
 
         UserResponseDto user = new UserResponseDto(userService.findById(id));
-        user.add(linkTo(methodOn(UserController.class).getAllUsers()).withSelfRel());
+        user.add(linkTo(methodOn(UserController.class).getAllUsers()).withRel("users"));
 
         return ResponseEntity.ok(user);
     }
 
     @PatchMapping("/{id}")
-    @Transactional
     public ResponseEntity<UserResponseDto> updateUser (
             @PathVariable int id,
             @RequestBody @NonNull UpdateUserDto user
@@ -75,7 +71,6 @@ public class UserController {
     }
 
     @PostMapping("/{id}/status")
-    @Transactional
     public ResponseEntity<UserResponseDto> status(@PathVariable int id) {
 
         UserModel user = userService.status(id);
@@ -84,9 +79,9 @@ public class UserController {
     }
 
     @DeleteMapping("/{id}")
-    @Transactional
     public ResponseEntity<Void> deleteById(@PathVariable int id) {
         userService.deleteById(id);
+
         return ResponseEntity.noContent().build();
     }
 
