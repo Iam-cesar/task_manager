@@ -1,18 +1,29 @@
 package com.example.task_manager.models;
 
-import com.example.task_manager.dtos.UserResponseDto;
+import java.util.Objects;
+
+import org.springframework.beans.BeanUtils;
+
+import com.example.task_manager.dtos.output.UserResponseDto;
 import com.example.task_manager.entities.BaseEntity;
 import com.example.task_manager.enums.UserStatusEnum;
-import jakarta.persistence.*;
-import jakarta.validation.constraints.*;
-import lombok.AllArgsConstructor;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.SequenceGenerator;
+import jakarta.persistence.Table;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.springframework.beans.BeanUtils;
-
-import java.util.Locale;
-import java.util.Objects;
 
 @Getter
 @Entity
@@ -22,6 +33,10 @@ public class UserModel extends BaseEntity {
 
     public UserModel(UserResponseDto userResponseDto) {
         BeanUtils.copyProperties(userResponseDto, this);
+    }
+
+    public UserModel(ProjectMemberModel p) {
+        BeanUtils.copyProperties(p, this);
     }
 
     @Id
@@ -35,7 +50,7 @@ public class UserModel extends BaseEntity {
 
     @Setter
     @NotBlank
-    @Size(max = 60)
+    @Size(max = 60, min = 3)
     @Column(nullable = false, length = 60)
     private String name;
 

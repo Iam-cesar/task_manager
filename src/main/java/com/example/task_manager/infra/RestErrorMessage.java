@@ -1,9 +1,10 @@
 package com.example.task_manager.infra;
 
+import org.springframework.http.HttpStatus;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
-import org.springframework.http.HttpStatus;
 
 @AllArgsConstructor
 @Getter

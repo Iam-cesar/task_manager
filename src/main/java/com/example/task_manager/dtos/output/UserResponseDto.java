@@ -1,16 +1,16 @@
-package com.example.task_manager.dtos;
+package com.example.task_manager.dtos.output;
 
-import com.example.task_manager.entities.BaseEntity;
-import com.example.task_manager.models.UserModel;
-import com.example.task_manager.enums.UserStatusEnum;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import java.time.Instant;
+
 import org.springframework.beans.BeanUtils;
 import org.springframework.hateoas.RepresentationModel;
 
-import java.sql.Timestamp;
-import java.time.Instant;
+import com.example.task_manager.enums.UserStatusEnum;
+import com.example.task_manager.models.UserModel;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 @Data
 @AllArgsConstructor

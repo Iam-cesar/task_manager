@@ -1,4 +1,4 @@
-package com.example.task_manager.dtos;
+package com.example.task_manager.dtos.input;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Size;

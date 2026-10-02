@@ -1,13 +1,14 @@
 package com.example.task_manager.repositories;
 
-import com.example.task_manager.dtos.ProjectResponseDto;
-import com.example.task_manager.models.ProjectModel;
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.util.List;
-import java.util.Optional;
+import com.example.task_manager.dtos.output.ProjectResponseDto;
+import com.example.task_manager.models.ProjectModel;
 
 public interface ProjectRepository extends JpaRepository<ProjectModel, Integer> {
 
@@ -29,5 +30,13 @@ public interface ProjectRepository extends JpaRepository<ProjectModel, Integer> 
             LEFT JOIN FETCH p.project_owner
             LEFT JOIN FETCH p.members
         """)
-    List<ProjectModel> findALlWithRelations();
+    List<ProjectModel> findAllWithRelations();
+
+    @Query("""
+        SELECT DISTINCT p FROM ProjectModel p
+        LEFT JOIN FETCH p.project_owner
+        LEFT JOIN FETCH p.members
+        WHERE p.id = :id
+    """)
+    Optional<ProjectModel> findByIdWithRelations(@Param("id") Integer id);
 }

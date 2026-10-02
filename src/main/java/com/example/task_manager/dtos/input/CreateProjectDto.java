@@ -1,13 +1,12 @@
-package com.example.task_manager.dtos;
+package com.example.task_manager.dtos.input;
+
+import org.springframework.beans.BeanUtils;
 
 import com.example.task_manager.models.ProjectModel;
-import com.example.task_manager.models.UserModel;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.beans.BeanUtils;
-
-import java.util.Set;
 
 @Data
 @NoArgsConstructor

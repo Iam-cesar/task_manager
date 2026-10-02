@@ -1,12 +1,16 @@
 package com.example.task_manager.services;
 
-import com.example.task_manager.dtos.CreateProjectDto;
-import com.example.task_manager.dtos.UpdateProjectDto;
-import com.example.task_manager.exceptions.ProjectAlreadyExistsException;
-import com.example.task_manager.exceptions.ProjectNotFoundException;
-import com.example.task_manager.models.ProjectModel;
-import com.example.task_manager.models.UserModel;
-import com.example.task_manager.repositories.ProjectRepository;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.Optional;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -17,16 +21,13 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import com.example.task_manager.dtos.input.CreateProjectDto;
+import com.example.task_manager.dtos.input.UpdateProjectDto;
+import com.example.task_manager.exceptions.ProjectAlreadyExistsException;
+import com.example.task_manager.exceptions.ProjectNotFoundException;
+import com.example.task_manager.models.ProjectModel;
+import com.example.task_manager.models.UserModel;
+import com.example.task_manager.repositories.ProjectRepository;
 
 @ExtendWith(MockitoExtension.class)
 class ProjectServiceTest {

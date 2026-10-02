@@ -1,17 +1,19 @@
 package com.example.task_manager.services;
 
-import com.example.task_manager.dtos.UpdateUserDto;
-import com.example.task_manager.exceptions.UserAlreadyExistsException;
-import com.example.task_manager.exceptions.UserNotFoundException;
-import com.example.task_manager.models.UserModel;
-import com.example.task_manager.repositories.UserRepository;
-import lombok.RequiredArgsConstructor;
+import java.util.List;
+import java.util.Optional;
+
 import org.jspecify.annotations.NonNull;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Optional;
+import com.example.task_manager.dtos.input.UpdateUserDto;
+import com.example.task_manager.exceptions.UserAlreadyExistsException;
+import com.example.task_manager.exceptions.UserNotFoundException;
+import com.example.task_manager.models.UserModel;
+import com.example.task_manager.repositories.UserRepository;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor

@@ -1,20 +1,39 @@
 package com.example.task_manager.models;
 
-import com.example.task_manager.dtos.CreateProjectDto;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Set;
+
+import org.springframework.beans.BeanUtils;
+
+import com.example.task_manager.dtos.input.CreateProjectDto;
 import com.example.task_manager.entities.BaseEntity;
 import com.example.task_manager.enums.ProjectStatusEnum;
-import jakarta.persistence.*;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.ForeignKey;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.SequenceGenerator;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.springframework.beans.BeanUtils;
-
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Set;
 
 @Getter
 @Entity
@@ -56,7 +75,7 @@ public class ProjectModel extends BaseEntity {
     }
 
     @NotBlank
-    @Size(max = 60)
+    @Size(max = 60, min = 3)
     @Column(nullable = false, length = 60)
     @Setter
     private String name;
@@ -76,9 +95,10 @@ public class ProjectModel extends BaseEntity {
     )
     private UserModel project_owner;
 
-    @ManyToMany(fetch = FetchType.LAZY)
+    @Setter
+    @ManyToMany(cascade = {CascadeType.DETACH, CascadeType.MERGE, CascadeType.PERSIST, CascadeType.REFRESH})
     @JoinTable(
-            name = "TB_PROJECTS_MEMBERS",
+            name = "TB_PROJECT_MEMBERS",
             joinColumns = @JoinColumn(
                     name = "project_id",
                     foreignKey = @ForeignKey(name = "fk_projects_members_project")
@@ -89,9 +109,6 @@ public class ProjectModel extends BaseEntity {
             )
     )
     private Set<UserModel> members = new HashSet<>();
-
-    public void addMember(UserModel member) { members.add(member); }
-    public void removeMember(UserModel member) { members.remove(member); }
 
     @NotNull
     @Enumerated(EnumType.STRING)

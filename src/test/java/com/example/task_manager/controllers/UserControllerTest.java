@@ -1,25 +1,5 @@
 package com.example.task_manager.controllers;
 
-import com.example.task_manager.dtos.UpdateUserDto;
-import com.example.task_manager.dtos.UserResponseDto;
-import com.example.task_manager.enums.UserStatusEnum;
-import com.example.task_manager.exceptions.UserAlreadyExistsException;
-import com.example.task_manager.exceptions.UserNotFoundException;
-import com.example.task_manager.models.UserModel;
-import com.example.task_manager.services.UserService;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
-import org.springframework.http.MediaType;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.util.ReflectionTestUtils;
-import org.springframework.test.web.servlet.MockMvc;
-
-import java.util.Collections;
-import java.util.List;
-
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
@@ -35,6 +15,25 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import java.util.Collections;
+import java.util.List;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.test.web.servlet.MockMvc;
+
+import com.example.task_manager.dtos.input.UpdateUserDto;
+import com.example.task_manager.exceptions.UserAlreadyExistsException;
+import com.example.task_manager.exceptions.UserNotFoundException;
+import com.example.task_manager.models.UserModel;
+import com.example.task_manager.services.UserService;
 
 @WebMvcTest(UserController.class)
 class UserControllerTest {

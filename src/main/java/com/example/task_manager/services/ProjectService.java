@@ -1,21 +1,23 @@
 package com.example.task_manager.services;
 
-import com.example.task_manager.dtos.CreateProjectDto;
-import com.example.task_manager.dtos.UpdateProjectDto;
+import java.util.List;
+
+import org.jspecify.annotations.NonNull;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.example.task_manager.dtos.input.CreateProjectDto;
+import com.example.task_manager.dtos.input.UpdateProjectDto;
 import com.example.task_manager.exceptions.ProjectAlreadyExistsException;
 import com.example.task_manager.exceptions.ProjectNotFoundException;
 import com.example.task_manager.exceptions.UserNotFoundException;
-import com.example.task_manager.models.ProjectMemberModel;
 import com.example.task_manager.models.ProjectModel;
 import com.example.task_manager.models.UserModel;
 import com.example.task_manager.repositories.ProjectMemberRepository;
 import com.example.task_manager.repositories.ProjectRepository;
 import com.example.task_manager.repositories.UserRepository;
-import lombok.RequiredArgsConstructor;
-import org.jspecify.annotations.NonNull;
-import org.springframework.stereotype.Service;
 
-import java.util.List;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -25,34 +27,52 @@ public class ProjectService {
     private final ProjectMemberRepository projectMemberRepository;
     private final UserRepository userRepository;
 
-    public ProjectModel saveAndFlush(@NonNull CreateProjectDto createProjectDto) throws IllegalArgumentException {
+    public ProjectModel saveAndFlush(@NonNull CreateProjectDto dto) throws IllegalArgumentException {
 
-        if (createProjectDto.getProject_owner_id() == null) {
+        if (dto.getProject_owner_id() == null) {
             throw new IllegalArgumentException("Project owner id must not be null");
         }
 
-        UserModel user = userRepository.findById(createProjectDto.getProject_owner_id()).orElseThrow(UserNotFoundException::new);
+        UserModel user = userRepository.findById(dto.getProject_owner_id()).orElseThrow(UserNotFoundException::new);
 
-        if (existsByOwnerIdAndName(user.getId(), createProjectDto.getName())) {
+        if (existsByOwnerIdAndName(user.getId(), dto.getName())) {
             throw new ProjectAlreadyExistsException();
         }
 
-        ProjectModel projectModel = new ProjectModel(createProjectDto);
+        ProjectModel projectModel = new ProjectModel(dto);
         projectModel.setProject_owner(user);
 
         return projectRepository.saveAndFlush(projectModel);
     }
 
-    public ProjectModel addMembers(int id, @NonNull List<Integer> memberIds) {
+    @Transactional
+    public ProjectModel addMembers(
+            int id,
+            @NonNull List<Integer> ids
+    ) {
 
         ProjectModel projectById = findById(id);
-        ProjectModel projectRef = projectRepository.getReferenceById(projectById.getId());
 
-        for (Integer memberId : memberIds) {
-            UserModel userRef = userRepository.getReferenceById(memberId);
+        List<UserModel> usersToAdd = userRepository.findAllById(ids);
 
-            ProjectMemberModel member = new ProjectMemberModel(projectRef, userRef);
-            projectMemberRepository.save(member);
+        projectById.getMembers().addAll(usersToAdd);
+
+        return projectRepository.saveAndFlush(projectById);
+    }
+
+    @Transactional
+    public ProjectModel removeMembers(
+            int id,
+            @NonNull List<Integer> ids
+    ) {
+
+        ProjectModel projectById = findById(id);
+
+        if (!ids.isEmpty()) {
+
+            projectMemberRepository.deleteByProjectIDAndUserIdsIn(projectById.getId(), ids);
+
+            projectById.getMembers().removeIf(user -> ids.contains(user.getId()));
         }
 
         return projectRepository.saveAndFlush(projectById);
@@ -80,11 +100,12 @@ public class ProjectService {
     }
 
     public ProjectModel findById(Integer id) {
-        return projectRepository.findById(id).orElseThrow(ProjectNotFoundException::new);
+        return projectRepository.findByIdWithRelations(id)
+                .orElseThrow(ProjectNotFoundException::new);
     }
 
     public List<ProjectModel> findAllWithRelations() {
-        return projectRepository.findALlWithRelations();
+        return projectRepository.findAllWithRelations();
     }
 
     public List<ProjectModel> findAll() {

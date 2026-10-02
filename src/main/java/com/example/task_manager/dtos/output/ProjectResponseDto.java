@@ -1,17 +1,18 @@
-package com.example.task_manager.dtos;
+package com.example.task_manager.dtos.output;
 
-import com.example.task_manager.enums.ProjectStatusEnum;
-import com.example.task_manager.models.ProjectModel;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import org.springframework.beans.BeanUtils;
-import org.springframework.hateoas.RepresentationModel;
-
-import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import org.springframework.beans.BeanUtils;
+import org.springframework.hateoas.RepresentationModel;
+
+import com.example.task_manager.enums.ProjectStatusEnum;
+import com.example.task_manager.models.ProjectModel;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 @Data
 @AllArgsConstructor
@@ -42,7 +43,9 @@ public class ProjectResponseDto extends RepresentationModel<ProjectResponseDto> 
 
     public ProjectResponseDto(ProjectModel projectModel) {
         BeanUtils.copyProperties(projectModel, this, "project_owner", "members");
+
         this.project_owner = new UserResponseDto(projectModel.getProject_owner());
+
         this.members = projectModel.getMembers().stream()
                 .map(UserResponseDto::new)
                 .collect(Collectors.toSet());
