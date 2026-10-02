@@ -26,12 +26,13 @@ import lombok.Setter;
 @NoArgsConstructor
 @Table(name = "TB_LABELS")
 public class LabelModel extends BaseEntity {
+
     @Id
     @Getter
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "labels_seq")
     @SequenceGenerator(
-            name = "labels_seq",
-            sequenceName = "labels_seq"
+        name = "labels_seq",
+        sequenceName = "labels_seq"
     )
     private Integer id;
 
@@ -40,9 +41,9 @@ public class LabelModel extends BaseEntity {
     @NotBlank
     @Size(max = 60)
     @Column(
-            nullable = false,
-            unique = true,
-            length = 60
+        nullable = false,
+        unique = true,
+        length = 60
     )
     private String name;
 

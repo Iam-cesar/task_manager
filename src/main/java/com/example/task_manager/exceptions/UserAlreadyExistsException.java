@@ -2,15 +2,15 @@ package com.example.task_manager.exceptions;
 
 public class UserAlreadyExistsException extends RuntimeException {
 
-    public UserAlreadyExistsException(String message) {
+    public UserAlreadyExistsException(final String message) {
         super(message);
     }
 
-    public UserAlreadyExistsException(String message, Throwable cause) {
+    public UserAlreadyExistsException(final String message, final Throwable cause) {
         super(message, cause);
     }
 
-    public UserAlreadyExistsException(Throwable cause) {
+    public UserAlreadyExistsException(final Throwable cause) {
         super(cause);
     }
 }

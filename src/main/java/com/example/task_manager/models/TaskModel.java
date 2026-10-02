@@ -51,8 +51,8 @@ public class TaskModel extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "tasks_seq")
     @SequenceGenerator(
-            name = "tasks_seq",
-            sequenceName = "tasks_seq"
+        name = "tasks_seq",
+        sequenceName = "tasks_seq"
     )
     private Integer id;
 
@@ -71,18 +71,18 @@ public class TaskModel extends BaseEntity {
     @Setter
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(
-            name = "project_id",
-            nullable = false,
-            foreignKey = @ForeignKey(name = "fk_tasks_project"))
+        name = "project_id",
+        nullable = false,
+        foreignKey = @ForeignKey(name = "fk_tasks_project"))
     private ProjectModel project;
 
     @NotNull
     @Setter
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(
-            name = "user_id",
-            nullable = false,
-            foreignKey = @ForeignKey(name = "fk_tasks_user")
+        name = "user_id",
+        nullable = false,
+        foreignKey = @ForeignKey(name = "fk_tasks_user")
     )
     private UserModel user;
 
@@ -108,13 +108,15 @@ public class TaskModel extends BaseEntity {
 
     @ManyToMany
     @JoinTable(
-            name = "TB_TASKS_LABELS",
-            joinColumns = @JoinColumn(
-                    name = "task_id",
-                    foreignKey = @ForeignKey(name = "fk_tasks_labels_task")),
-            inverseJoinColumns = @JoinColumn(
-                    name = "label_id",
-                    foreignKey = @ForeignKey(name = "fk_tasks_labels_label"))
+        name = "TB_TASKS_LABELS",
+        joinColumns = @JoinColumn(
+            name = "task_id",
+            foreignKey = @ForeignKey(name = "fk_tasks_labels_task")
+        ),
+        inverseJoinColumns = @JoinColumn(
+            name = "label_id",
+            foreignKey = @ForeignKey(name = "fk_tasks_labels_label")
+        )
     )
     private Set<LabelModel> labels = new HashSet<>();
 
@@ -158,9 +160,9 @@ public class TaskModel extends BaseEntity {
 
     public boolean isOverdue() {
         return due_date != null
-                && status != TaskStatusEnum.COMPLETED
-                && status != TaskStatusEnum.CANCELED
-                && due_date.isBefore(Instant.now());
+            && status != TaskStatusEnum.COMPLETED
+            && status != TaskStatusEnum.CANCELED
+            && due_date.isBefore(Instant.now());            
     }
 
     public void addLabel(LabelModel label) {

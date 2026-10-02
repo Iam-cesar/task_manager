@@ -21,33 +21,33 @@ public class UserService {
 
     private final UserRepository userRepository;
 
-    public UserModel saveAndFlush(@NonNull UserModel user) throws UserAlreadyExistsException {
+    public UserModel saveAndFlush(@NonNull final UserModel aUser) throws UserAlreadyExistsException {
 
-        Optional<UserModel> userServiceByEmail = userRepository.findByEmail(user.getEmail());
-        String userNotFoundByEmailMessage = "User with email " + user.getEmail() + " already exists";
+        final Optional<UserModel> userServiceByEmail = userRepository.findByEmail(aUser.getEmail());
+        final String userNotFoundByEmailMessage = "User with email " + aUser.getEmail() + " already exists";
 
         if (userServiceByEmail.isPresent()) {
             throw new UserAlreadyExistsException(userNotFoundByEmailMessage);
         }
 
-        return userRepository.saveAndFlush(user);
+        return userRepository.saveAndFlush(aUser);
     }
 
     public List<UserModel> findAll() { return userRepository.findAll(); }
 
-    public UserModel findById(int id) throws UserNotFoundException {
-        return userRepository.findById(id).orElseThrow(UserNotFoundException::new);
+    public UserModel findById(final int anId) throws UserNotFoundException {
+        return userRepository.findById(anId).orElseThrow(UserNotFoundException::new);
     }
 
     public UserModel updateAndFlush(
-            int id,
-            @NonNull UpdateUserDto updateUserDto
+            final int anId,
+            @NonNull final UpdateUserDto updateUserDto
     ) throws UserAlreadyExistsException {
 
-        UserModel userById = findById(id);
+        final var userById = findById(anId);
 
         if (existsByEmail(updateUserDto.email())) {
-            String userEmailConflictMessage = "Já existe um usuário com esse e-mail";
+            final String userEmailConflictMessage = "Já existe um usuário com esse e-mail";
             throw new UserAlreadyExistsException(userEmailConflictMessage);
         }
 
@@ -56,34 +56,34 @@ public class UserService {
         return userRepository.saveAndFlush(userById);
     }
 
-    public UserModel status(int id) {
-        UserModel userById = findById(id);
+    public UserModel status(final int anId) {
+        final var userById = findById(anId);
 
         return userById.isActive()
                 ? deactivate(userById)
                 : activate(userById);
     }
 
-    private @NonNull UserModel deactivate(@NonNull UserModel user)  {
-        user.deactivate();
+    private @NonNull UserModel deactivate(@NonNull final UserModel aUser)  {
+        aUser.deactivate();
 
-        return userRepository.saveAndFlush(user);
+        return userRepository.saveAndFlush(aUser);
     }
 
-    private @NonNull UserModel activate(@NonNull UserModel user) {
-        user.activate();
+    private @NonNull UserModel activate(@NonNull final UserModel aUser) {
+        aUser.activate();
 
-        return userRepository.saveAndFlush(user);
+        return userRepository.saveAndFlush(aUser);
     }
 
-    public void deleteById(int id) {
+    public void deleteById(final int anId) {
 
-        UserModel user = findById(id);
+        UserModel user = findById(anId);
 
-        if (user != null) { userRepository.deleteById(id); }
+        if (user != null) { userRepository.deleteById(anId); }
     }
 
-    public boolean existsByEmail(String email) {
-        return userRepository.findByEmail(email).isPresent();
+    public boolean existsByEmail(final String anEmail) {
+        return userRepository.findByEmail(anEmail).isPresent();
     }
 }

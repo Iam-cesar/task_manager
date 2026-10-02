@@ -27,19 +27,20 @@ public class ProjectService {
     private final ProjectMemberRepository projectMemberRepository;
     private final UserRepository userRepository;
 
-    public ProjectModel saveAndFlush(@NonNull CreateProjectDto dto) throws IllegalArgumentException {
+    public ProjectModel saveAndFlush(@NonNull final CreateProjectDto aDto) throws IllegalArgumentException {
 
-        if (dto.getProject_owner_id() == null) {
+        if (aDto.getProject_owner_id() == null) {
             throw new IllegalArgumentException("Project owner id must not be null");
         }
 
-        UserModel user = userRepository.findById(dto.getProject_owner_id()).orElseThrow(UserNotFoundException::new);
+        final var user = userRepository.findById(aDto.getProject_owner_id())
+            .orElseThrow(UserNotFoundException::new);
 
-        if (existsByOwnerIdAndName(user.getId(), dto.getName())) {
+        if (existsByOwnerIdAndName(user.getId(), aDto.getName())) {
             throw new ProjectAlreadyExistsException();
         }
 
-        ProjectModel projectModel = new ProjectModel(dto);
+        final var projectModel = new ProjectModel(aDto);
         projectModel.setProject_owner(user);
 
         return projectRepository.saveAndFlush(projectModel);
@@ -47,60 +48,60 @@ public class ProjectService {
 
     @Transactional
     public ProjectModel addMembers(
-            int id,
-            @NonNull List<Integer> ids
+            @NonNull final int anId,
+            @NonNull final List<Integer> aListOfIds
     ) {
 
-        ProjectModel projectById = findById(id);
+        final var project = findById(anId);
 
-        List<UserModel> usersToAdd = userRepository.findAllById(ids);
+        final List<UserModel> alistOfUsersToAdd = userRepository.findAllById(aListOfIds);
 
-        projectById.getMembers().addAll(usersToAdd);
+        project.getMembers().addAll(alistOfUsersToAdd);
 
-        return projectRepository.saveAndFlush(projectById);
+        return projectRepository.saveAndFlush(project);
     }
 
     @Transactional
     public ProjectModel removeMembers(
-            int id,
-            @NonNull List<Integer> ids
+            @NonNull final int anId,
+            @NonNull final List<Integer> aListOfIds
     ) {
 
-        ProjectModel projectById = findById(id);
+        final var project = findById(anId);
 
-        if (!ids.isEmpty()) {
+        if (!aListOfIds.isEmpty()) {
 
-            projectMemberRepository.deleteByProjectIDAndUserIdsIn(projectById.getId(), ids);
+            projectMemberRepository.deleteByProjectIDAndUserIdsIn(project.getId(), aListOfIds);
 
-            projectById.getMembers().removeIf(user -> ids.contains(user.getId()));
+            project.getMembers().removeIf(user -> aListOfIds.contains(user.getId()));
         }
 
-        return projectRepository.saveAndFlush(projectById);
+        return projectRepository.saveAndFlush(project);
     }
 
-    private @NonNull ProjectModel deactivate(@NonNull ProjectModel projectModel) {
+    private @NonNull ProjectModel deactivate(@NonNull final ProjectModel projectModel) {
 
         projectModel.deactivate();
 
         return projectRepository.saveAndFlush(projectModel);
     }
 
-    private @NonNull ProjectModel activate(@NonNull ProjectModel projectModel) {
+    private @NonNull ProjectModel activate(@NonNull final ProjectModel projectModel) {
 
         projectModel.activate();
 
         return projectRepository.saveAndFlush(projectModel);
     }
 
-    public ProjectModel status(int id) {
+    public ProjectModel status(@NonNull final int anId) {
 
-        ProjectModel projectById = findById(id);
+        final var project = findById(anId);
 
-        return projectById.isActive() ? deactivate(projectById) : activate(projectById);
+        return project.isActive() ? deactivate(project) : activate(project);
     }
 
-    public ProjectModel findById(Integer id) {
-        return projectRepository.findByIdWithRelations(id)
+    public ProjectModel findById(final Integer anId) {
+        return projectRepository.findByIdWithRelations(anId)
                 .orElseThrow(ProjectNotFoundException::new);
     }
 
@@ -112,37 +113,39 @@ public class ProjectService {
         return projectRepository.findAll();
     }
 
-    public ProjectModel updateAndFlush(int id, @NonNull UpdateProjectDto updateProjectDto) {
+    public ProjectModel updateAndFlush(
+        @NonNull final int anId,
+        @NonNull final UpdateProjectDto aDto) {
 
-        ProjectModel projectById = findById(id);
+        final var project = findById(anId);
 
-        if (updateProjectDto.name() != null && !updateProjectDto.name().equals(projectById.getName())) {
+        if (aDto.name() != null && !aDto.name().equals(project.getName())) {
 
-            if (existsByOwnerIdAndName(projectById.getProject_owner().getId(), updateProjectDto.name())) {
+            if (existsByOwnerIdAndName(project.getProject_owner().getId(), aDto.name())) {
                 throw new ProjectAlreadyExistsException();
             }
 
-            projectById.setName(updateProjectDto.name());
+            project.setName(aDto.name());
         }
 
-        if (updateProjectDto.description() != null) {
+        if (aDto.description() != null) {
 
-            projectById.setDescription(updateProjectDto.description());
+            project.setDescription(aDto.description());
         }
 
-        return projectRepository.saveAndFlush(projectById);
+        return projectRepository.saveAndFlush(project);
     }
 
-    public void delete(int id) {
+    public void delete(@NonNull final int anId) {
 
-        ProjectModel projectById = findById(id);
+        final var project = findById(anId);
 
-        if (projectById != null) {
-            projectRepository.deleteById(id);
+        if (project != null) {
+            projectRepository.deleteById(anId);
         }
     }
 
-    public boolean existsByOwnerIdAndName(Integer ownerId, String name) {
-        return projectRepository.existsByProjectOwnerIdAndName(ownerId, name);
+    public boolean existsByOwnerIdAndName(final Integer ownerId, final String aName) {
+        return projectRepository.existsByProjectOwnerIdAndName(ownerId, aName);
     }
 }

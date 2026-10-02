@@ -47,7 +47,7 @@ public class ProjectResponseDto extends RepresentationModel<ProjectResponseDto> 
         this.project_owner = new UserResponseDto(projectModel.getProject_owner());
 
         this.members = projectModel.getMembers().stream()
-                .map(UserResponseDto::new)
-                .collect(Collectors.toSet());
+            .map(UserResponseDto::new)
+            .collect(Collectors.toSet());
     }
 }

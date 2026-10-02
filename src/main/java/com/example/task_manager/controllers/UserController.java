@@ -35,10 +35,10 @@ public class UserController {
 
     @PostMapping
     public ResponseEntity<UserResponseDto> createUser(
-            @RequestBody @Valid @NonNull UserModel user,
-            @NonNull UriComponentsBuilder uriBuilder
+        @RequestBody @Valid @NonNull UserModel aUser,
+        @NonNull UriComponentsBuilder uriBuilder
     ) {
-        UserResponseDto userCreated = new UserResponseDto(userService.saveAndFlush(user));
+        var userCreated = new UserResponseDto(userService.saveAndFlush(aUser));
         URI uri = uriBuilder.path("/users/{id}").buildAndExpand(userCreated.getId()).toUri();
 
         return ResponseEntity.created(uri).body(userCreated);
@@ -60,9 +60,9 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<UserResponseDto> getUserById(@PathVariable int id)  {
+    public ResponseEntity<UserResponseDto> getUserById(@PathVariable int anId)  {
 
-        UserResponseDto user = new UserResponseDto(userService.findById(id));
+        var user = new UserResponseDto(userService.findById(anId));
         user.add(linkTo(methodOn(UserController.class).getAllUsers()).withRel("users"));
 
         return ResponseEntity.ok(user);
@@ -70,31 +70,31 @@ public class UserController {
 
     @PatchMapping("/{id}")
     public ResponseEntity<UserResponseDto> updateUser (
-            @PathVariable int id,
-            @RequestBody @NonNull UpdateUserDto user
+        @PathVariable int anId,
+        @RequestBody @NonNull UpdateUserDto aUser
     ) {
-        UserResponseDto userUpdated = new UserResponseDto(userService.updateAndFlush(id, user));
+        var userUpdated = new UserResponseDto(userService.updateAndFlush(anId, aUser));
 
         return ResponseEntity.ok(userUpdated);
     }
 
     @PostMapping("/{id}/status")
-    public ResponseEntity<UserResponseDto> status(@PathVariable int id) {
+    public ResponseEntity<UserResponseDto> status(@PathVariable int anId) {
 
-        UserModel user = userService.status(id);
+        UserModel user = userService.status(anId);
 
         return ResponseEntity.ok(new UserResponseDto(user));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteById(@PathVariable int id) {
-        userService.deleteById(id);
+    public ResponseEntity<Void> deleteById(@PathVariable int anId) {
+        userService.deleteById(anId);
 
         return ResponseEntity.noContent().build();
     }
 
-    private @NonNull List<UserResponseDto> convertUsersToList (@NonNull List<UserModel> users) {
+    private @NonNull List<UserResponseDto> convertUsersToList (@NonNull final List<UserModel> alistOfUserModels) {
 
-        return users.stream().map(UserResponseDto::new).toList();
+        return alistOfUserModels.stream().map(UserResponseDto::new).toList();
     }
 }

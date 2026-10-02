@@ -6,9 +6,9 @@ public enum ProjectStatusEnum {
     INACTIVE("inactive"), ACTIVE("active");
 
     @JsonValue
-    private final String value;
+    private final String status;
 
-    ProjectStatusEnum(String value) { this.value = value; }
+    ProjectStatusEnum(final String anStatus) { this.status = anStatus; }
 
-    public String value() { return this.value; }
+    public final String value() { return this.status; }
 }

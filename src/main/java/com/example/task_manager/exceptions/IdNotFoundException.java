@@ -2,15 +2,15 @@ package com.example.task_manager.exceptions;
 
 public class IdNotFoundException extends RuntimeException {
 
-    public IdNotFoundException(String message) {
+    public IdNotFoundException(final String message) {
         super(message);
     }
 
-    public IdNotFoundException(String message, Throwable cause) {
+    public IdNotFoundException(final String message, final Throwable cause) {
         super(message, cause);
     }
 
-    public IdNotFoundException(Throwable cause) {
+    public IdNotFoundException(final Throwable cause) {
         super(cause);
     }
 }

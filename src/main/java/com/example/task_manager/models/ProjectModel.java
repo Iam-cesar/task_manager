@@ -39,26 +39,26 @@ import lombok.Setter;
 @Entity
 @NoArgsConstructor
 @Table(
-        name = "TB_PROJECTS",
-        uniqueConstraints = @UniqueConstraint(
-                name = "uk_projects_owner_name",
-                columnNames = {"project_owner_id", "name"}
-        ),
-        indexes = {
-                @Index(name = "idx_projects_status", columnList = "status")
-        }
+    name = "TB_PROJECTS",
+    uniqueConstraints = @UniqueConstraint(
+        name = "uk_projects_owner_name",
+        columnNames = {"project_owner_id", "name"}
+    ),
+    indexes = {
+        @Index(name = "idx_projects_status", columnList = "status")
+    }
 )
 public class ProjectModel extends BaseEntity {
 
-    public ProjectModel (CreateProjectDto createProjectDto) {
-        BeanUtils.copyProperties(createProjectDto, this);
+    public ProjectModel (CreateProjectDto aDto) {
+        BeanUtils.copyProperties(aDto, this);
     }
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "projects_seq")
     @SequenceGenerator(
-            name = "projects_seq",
-            sequenceName = "projects_seq"
+        name = "projects_seq",
+        sequenceName = "projects_seq"
     )
     private Integer id;
 
@@ -68,6 +68,7 @@ public class ProjectModel extends BaseEntity {
         ProjectModel that = (ProjectModel) o;
         return Objects.equals(id, that.id);
     }
+
 
     @Override
     public int hashCode() {
@@ -89,24 +90,24 @@ public class ProjectModel extends BaseEntity {
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(
-            name = "project_owner_id",
-            nullable = false,
-            foreignKey = @ForeignKey(name = "fk_projects_project_owner")
+        name = "project_owner_id",
+        nullable = false,
+        foreignKey = @ForeignKey(name = "fk_projects_project_owner")
     )
     private UserModel project_owner;
 
     @Setter
     @ManyToMany(cascade = {CascadeType.DETACH, CascadeType.MERGE, CascadeType.PERSIST, CascadeType.REFRESH})
     @JoinTable(
-            name = "TB_PROJECT_MEMBERS",
-            joinColumns = @JoinColumn(
-                    name = "project_id",
-                    foreignKey = @ForeignKey(name = "fk_projects_members_project")
-            ),
-            inverseJoinColumns = @JoinColumn(
-                    name = "user_id",
-                    foreignKey = @ForeignKey(name = "fk_projects_members_user")
-            )
+        name = "TB_PROJECT_MEMBERS",
+        joinColumns = @JoinColumn(
+            name = "project_id",
+            foreignKey = @ForeignKey(name = "fk_projects_members_project")
+        ),
+        inverseJoinColumns = @JoinColumn(
+            name = "user_id",
+            foreignKey = @ForeignKey(name = "fk_projects_members_user")
+        )
     )
     private Set<UserModel> members = new HashSet<>();
 

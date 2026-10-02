@@ -9,9 +9,9 @@ public enum TaskPriorityEnum {
     URGENT("urgent");
 
     @JsonValue
-    private final String value;
+    private final String status;
 
-    TaskPriorityEnum(String value) { this.value = value; }
+    TaskPriorityEnum(final String anStatus) { this.status = anStatus; }
 
-    public String value() { return this.value; }
+    public final String value() { return this.status; }
 }

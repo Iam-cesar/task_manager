@@ -37,49 +37,52 @@ public class ProjectsController {
 
     @PostMapping
     public ResponseEntity<ProjectResponseDto> createProject(
-            @RequestBody @Valid @NonNull CreateProjectDto project,
+            @RequestBody @Valid @NonNull final CreateProjectDto aDto,
             @NonNull UriComponentsBuilder uriBuilder
     ) {
-        ProjectResponseDto projectCreated = new ProjectResponseDto(projectService.saveAndFlush(project));
+        var projectCreated = new ProjectResponseDto(projectService.saveAndFlush(aDto));
+        
         URI uri = uriBuilder.path("/projects/{id}").buildAndExpand(projectCreated.getId()).toUri();
 
         return ResponseEntity.created(uri).body(projectCreated);
     }
 
     @PostMapping("/{id}/status")
-    public ResponseEntity<ProjectResponseDto> status(@PathVariable int id) {
-        ProjectResponseDto projectResponseDto = new ProjectResponseDto(projectService.status(id));
+    public ResponseEntity<ProjectResponseDto> status(@PathVariable int anId) {
+        var projectResponseDto = new ProjectResponseDto(projectService.status(anId));
 
         return ResponseEntity.ok(projectResponseDto);
     }
 
     @PostMapping("/{id}/add-members")
     public ResponseEntity<ProjectResponseDto> addMembers(
-            @PathVariable int id,
-            @RequestBody @Valid @NonNull MemberIdsDto dto
+        @PathVariable final int anId,
+        @RequestBody @Valid @NonNull MemberIdsDto aDto
     ) {
-        ProjectResponseDto projectResponseDto = new ProjectResponseDto(
-                projectService.addMembers(id, dto.member_ids()));
+        var projectResponseDto = new ProjectResponseDto(
+            projectService.addMembers(anId, aDto.member_ids()));
 
         return ResponseEntity.ok(projectResponseDto);
     }
 
     @PostMapping("/{id}/remove-members")
     public ResponseEntity<ProjectResponseDto> removeMembers(
-            @PathVariable int id,
-            @RequestBody @Valid @NonNull MemberIdsDto member_ids
+        @PathVariable final int anId,
+        @RequestBody @Valid @NonNull MemberIdsDto aListOfMemberIds
     ) {
-        ProjectResponseDto projectResponseDto = new ProjectResponseDto(
-                projectService.removeMembers(id, member_ids.member_ids()));
+        var projectResponseDto = new ProjectResponseDto(
+            projectService.removeMembers(anId, aListOfMemberIds.member_ids()));
 
         return ResponseEntity.ok(projectResponseDto);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ProjectResponseDto> getProjectById(@PathVariable int id) {
+    public ResponseEntity<ProjectResponseDto> getProjectById(@PathVariable int anId) {
 
-        ProjectResponseDto project = new ProjectResponseDto(projectService.findById(id));
-        project.add(linkTo(methodOn(ProjectsController.class).getAllProjects()).withRel("projects"));
+        var project = new ProjectResponseDto(projectService.findById(anId));
+
+        project.add(linkTo(methodOn(ProjectsController.class)
+            .getAllProjects()).withRel("projects"));
 
         return ResponseEntity.ok(project);
     }
@@ -92,7 +95,8 @@ public class ProjectsController {
         if  (!projects.isEmpty()) {
             for (ProjectResponseDto project : projects) {
                 int id  = project.getId();
-                project.add(linkTo(methodOn(ProjectsController.class).getProjectById(id)).withSelfRel());
+                project.add(linkTo(methodOn(ProjectsController.class)
+                    .getProjectById(id)).withSelfRel());
             }
         }
 
@@ -101,23 +105,23 @@ public class ProjectsController {
 
     @PatchMapping("/{id}")
     public ResponseEntity<ProjectResponseDto> updateProject(
-            @PathVariable int id,
-            @Valid @NonNull @RequestBody UpdateProjectDto updateProjectDto
+        @PathVariable final int id,
+        @Valid @NonNull @RequestBody UpdateProjectDto aDto
     ) {
-        ProjectResponseDto projectUpdated = new ProjectResponseDto(projectService.updateAndFlush(id, updateProjectDto));
+        var projectUpdated = new ProjectResponseDto(projectService.updateAndFlush(id, aDto));
 
         return ResponseEntity.ok(projectUpdated);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteProject(@PathVariable int id) {
+    public ResponseEntity<Void> deleteProject(@PathVariable final int id) {
         projectService.delete(id);
 
         return ResponseEntity.noContent().build();
     }
 
-    private @NonNull List<ProjectResponseDto> convertProjectsToList (@NonNull List<ProjectModel> projects) {
+    private @NonNull List<ProjectResponseDto> convertProjectsToList (@NonNull final List<ProjectModel> aListOfProjectModels) {
 
-        return projects.stream().map(ProjectResponseDto::new).toList();
+        return aListOfProjectModels.stream().map(ProjectResponseDto::new).toList();
     }
 }

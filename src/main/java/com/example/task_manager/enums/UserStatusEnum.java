@@ -10,9 +10,7 @@ public enum UserStatusEnum {
     INACTIVE("inactive");
 
     @JsonValue
-    public final String value;
+    public final String status;
 
-    UserStatusEnum(String value) {
-        this.value = value;
-    }
+    UserStatusEnum(final String anStatus) { this.status = anStatus; }
 }

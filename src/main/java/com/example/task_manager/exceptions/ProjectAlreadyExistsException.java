@@ -6,13 +6,13 @@ public class ProjectAlreadyExistsException extends RuntimeException {
         super("A project with this name already exists for this user.");
     }
 
-    public ProjectAlreadyExistsException(String message) { super(message); }
+    public ProjectAlreadyExistsException(final String message) { super(message); }
 
-    public ProjectAlreadyExistsException(String message, Throwable cause) {
+    public ProjectAlreadyExistsException(final String message, final Throwable cause) {
         super(message, cause);
     }
 
-    public ProjectAlreadyExistsException(Throwable cause) {
+    public ProjectAlreadyExistsException(final Throwable cause) {
         super(cause);
     }
 }

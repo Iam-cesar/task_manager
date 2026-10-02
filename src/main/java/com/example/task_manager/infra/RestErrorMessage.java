@@ -10,6 +10,6 @@ import lombok.Setter;
 @Getter
 @Setter
 public class RestErrorMessage {
-    private HttpStatus status;
-    private String message;
+    private final HttpStatus status;
+    private final String message;
 }

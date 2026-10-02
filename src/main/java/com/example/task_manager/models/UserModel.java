@@ -31,8 +31,8 @@ import lombok.Setter;
 @Table(name = "TB_USERS")
 public class UserModel extends BaseEntity {
 
-    public UserModel(UserResponseDto userResponseDto) {
-        BeanUtils.copyProperties(userResponseDto, this);
+    public UserModel(UserResponseDto aDto) {
+        BeanUtils.copyProperties(aDto, this);
     }
 
     public UserModel(ProjectMemberModel p) {
@@ -43,8 +43,8 @@ public class UserModel extends BaseEntity {
     @Getter
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "users_seq")
     @SequenceGenerator(
-            name = "users_seq",
-            sequenceName = "users_seq"
+        name = "users_seq",
+        sequenceName = "users_seq"
     )
     private Integer id;
 

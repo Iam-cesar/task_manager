@@ -12,9 +12,9 @@ public enum TaskStatusEnum {
     COMPLETED("completed");
 
     @JsonValue
-    private final String value;
+    private final String status;
 
-    TaskStatusEnum(String value) {
-        this.value = value;
+    TaskStatusEnum(final String anStatus) {
+        this.status = anStatus;
     }
 }
