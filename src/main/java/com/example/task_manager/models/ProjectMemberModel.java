@@ -20,8 +20,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Getter
-@Setter
 @NoArgsConstructor
 @Table(
     name = "TB_PROJECT_MEMBERS",
@@ -38,6 +36,7 @@ public class ProjectMemberModel extends BaseEntity {
     }
 
     @Id
+    @Getter
     @GeneratedValue(
         strategy = GenerationType.SEQUENCE,
         generator = "project_members_seq"
@@ -48,6 +47,8 @@ public class ProjectMemberModel extends BaseEntity {
     )
     private Integer id;
 
+    @Getter
+    @Setter
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(
         name = "project_id",
@@ -57,6 +58,8 @@ public class ProjectMemberModel extends BaseEntity {
     )
     private ProjectModel project;
 
+    @Getter
+    @Setter
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(
         name = "user_id",   
@@ -74,7 +77,5 @@ public class ProjectMemberModel extends BaseEntity {
     }
 
     @Override
-    public int hashCode() {
-        return Objects.hash(id, project, user);
-    }
+    public int hashCode() { return Objects.hash(id, project, user); }
 }
