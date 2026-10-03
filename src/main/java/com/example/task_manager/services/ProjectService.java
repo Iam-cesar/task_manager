@@ -27,7 +27,8 @@ public class ProjectService {
     private final ProjectMemberRepository projectMemberRepository;
     private final UserRepository userRepository;
 
-    public ProjectModel saveAndFlush(@NonNull final CreateProjectDto aDto) throws IllegalArgumentException {
+    public ProjectModel saveAndFlush(
+            @NonNull final CreateProjectDto aDto) throws IllegalArgumentException {
 
         if (aDto.getProject_owner_id() == null) {
             throw new IllegalArgumentException("Project owner id must not be null");
@@ -48,7 +49,7 @@ public class ProjectService {
 
     @Transactional
     public ProjectModel addMembers(
-            @NonNull final int anId,
+            final int anId,
             @NonNull final List<Integer> aListOfIds
     ) {
 
@@ -63,7 +64,7 @@ public class ProjectService {
 
     @Transactional
     public ProjectModel removeMembers(
-            @NonNull final int anId,
+            final int anId,
             @NonNull final List<Integer> aListOfIds
     ) {
 
@@ -73,7 +74,8 @@ public class ProjectService {
 
             projectMemberRepository.deleteByProjectIDAndUserIdsIn(project.getId(), aListOfIds);
 
-            project.getMembers().removeIf(user -> aListOfIds.contains(user.getId()));
+            project.getMembers()
+                .removeIf(user -> aListOfIds.contains(user.getId()));
         }
 
         return projectRepository.saveAndFlush(project);
@@ -93,7 +95,7 @@ public class ProjectService {
         return projectRepository.saveAndFlush(projectModel);
     }
 
-    public ProjectModel status(@NonNull final int anId) {
+    public ProjectModel status(final int anId) {
 
         final var project = findById(anId);
 
@@ -114,7 +116,7 @@ public class ProjectService {
     }
 
     public ProjectModel updateAndFlush(
-        @NonNull final int anId,
+        final int anId,
         @NonNull final UpdateProjectDto aDto) {
 
         final var project = findById(anId);
@@ -136,7 +138,7 @@ public class ProjectService {
         return projectRepository.saveAndFlush(project);
     }
 
-    public void delete(@NonNull final int anId) {
+    public void delete(final int anId) {
 
         final var project = findById(anId);
 
