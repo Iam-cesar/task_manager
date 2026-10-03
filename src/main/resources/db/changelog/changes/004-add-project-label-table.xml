@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+    <changeSet author="abj" id="004-add-project-label-table">
+        <createSequence sequenceName="project_label_seq" startValue="1" incrementBy="50"/>
+        <createTable tableName="tb_project_labels">
+            <column name="id" type="INTEGER">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="pk_label_projects"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP(6) WITH TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP(6) WITH TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="INTEGER"/>
+            <column name="project_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="label_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addUniqueConstraint
+                tableName="tb_project_labels"
+                columnNames="project_id, label_id"
+                constraintName="uk_project_labels_project_label"/>
+        <addForeignKeyConstraint
+                baseTableName="tb_project_labels"
+                baseColumnNames="project_id"
+                referencedTableName="tb_projects"
+                referencedColumnNames="id"
+                constraintName="fk_project_labels_project"/>
+        <addForeignKeyConstraint
+                baseTableName="tb_project_labels"
+                baseColumnNames="label_id"
+                referencedTableName="tb_labels"
+                referencedColumnNames="id"
+                constraintName="fk_project_labels_label"/>
+    </changeSet>
+</databaseChangeLog>

@@ -25,6 +25,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
@@ -69,7 +70,6 @@ public class ProjectModel extends BaseEntity {
         return Objects.equals(id, that.id);
     }
 
-
     @Override
     public int hashCode() {
         return Objects.hashCode(id);
@@ -96,6 +96,7 @@ public class ProjectModel extends BaseEntity {
     )
     private UserModel project_owner;
 
+    @Getter
     @Setter
     @ManyToMany(cascade = {CascadeType.DETACH, CascadeType.MERGE, CascadeType.PERSIST, CascadeType.REFRESH})
     @JoinTable(
@@ -110,6 +111,9 @@ public class ProjectModel extends BaseEntity {
         )
     )
     private Set<UserModel> members = new HashSet<>();
+
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<ProjectLabelModel> projectLabels = new HashSet<>();
 
     @NotNull
     @Enumerated(EnumType.STRING)
@@ -127,4 +131,31 @@ public class ProjectModel extends BaseEntity {
     public boolean isActive() {
         return this.status == ProjectStatusEnum.ACTIVE;
     }
+
+    public void addLabel(final LabelModel aLabel) {
+        Objects.requireNonNull(aLabel, "Label cannot be null");
+
+        if (!hasLabel(aLabel)) {
+            projectLabels.add(new ProjectLabelModel(this, aLabel));
+        }
+    }
+
+    public void removeLabel(final LabelModel aLabel) {
+        Objects.requireNonNull(aLabel, "Label cannot be null");
+        projectLabels.removeIf(projectLabel -> sameLabel(projectLabel.getLabel(), aLabel));
+    }
+
+    private boolean hasLabel(final LabelModel aLabel) {
+        return projectLabels.stream()
+            .anyMatch(projectLabel -> sameLabel(projectLabel.getLabel(), aLabel));
+    }
+
+    private boolean sameLabel(
+        final LabelModel first, final LabelModel second) {
+
+        if (first == second) { return true; }
+
+        return first.getId() != null && first.getId().equals(second.getId());
+    }
+
 }
