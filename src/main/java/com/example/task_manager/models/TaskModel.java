@@ -48,6 +48,7 @@ import lombok.Setter;
     }
 )
 public class TaskModel extends BaseEntity {
+
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "tasks_seq")
     @SequenceGenerator(
@@ -141,7 +142,7 @@ public class TaskModel extends BaseEntity {
     }
 
     public void changeStatus(TaskStatusEnum newStatus) {
-        Objects.requireNonNull(newStatus, "status nao pode ser null");
+        Objects.requireNonNull(newStatus, "Status cannot be null");
         switch (newStatus) {
             case PENDING   -> reopen();
             case RUNNING   -> start();
