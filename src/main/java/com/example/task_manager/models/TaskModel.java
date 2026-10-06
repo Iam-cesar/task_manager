@@ -6,28 +6,13 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
+import jakarta.persistence.*;
 import org.hibernate.annotations.ColumnDefault;
 
 import com.example.task_manager.entities.BaseEntity;
 import com.example.task_manager.enums.TaskPriorityEnum;
 import com.example.task_manager.enums.TaskStatusEnum;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.ForeignKey;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Index;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
-import jakarta.persistence.ManyToMany;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.SequenceGenerator;
-import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -109,7 +94,7 @@ public class TaskModel extends BaseEntity {
 
     @ManyToMany
     @JoinTable(
-        name = "TB_TASKS_LABELS",
+        name = "TB_TASK_LABELS",
         joinColumns = @JoinColumn(
             name = "task_id",
             foreignKey = @ForeignKey(name = "fk_tasks_labels_task")
@@ -176,6 +161,7 @@ public class TaskModel extends BaseEntity {
         label.internalTasks().remove(this);
     }
 
+    @PreRemove
     public void clearLabels() {
         for (LabelModel label : new HashSet<>(this.labels)) {
             removeLabel(label);

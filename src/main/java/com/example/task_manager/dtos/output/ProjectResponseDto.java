@@ -1,9 +1,11 @@
 package com.example.task_manager.dtos.output;
 
 import java.time.Instant;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.example.task_manager.models.LabelModel;
 import org.springframework.beans.BeanUtils;
 import org.springframework.hateoas.RepresentationModel;
 
@@ -30,16 +32,11 @@ public class ProjectResponseDto extends RepresentationModel<ProjectResponseDto> 
 
     Set<UserResponseDto> members;
 
+    Set<UserResponseDto> labels = new HashSet<>();
+
     Long task_count = 0L;
 
     Instant created_at;
-
-    public ProjectResponseDto(Integer id, String name, String description, Long taskCount) {
-        this.id = id;
-        this.name = name;
-        this.description = description;
-        this.task_count = taskCount;
-    }
 
     public ProjectResponseDto(ProjectModel projectModel) {
         BeanUtils.copyProperties(projectModel, this, "project_owner", "members");

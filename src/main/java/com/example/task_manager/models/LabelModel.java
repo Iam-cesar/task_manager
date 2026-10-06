@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
+import com.example.task_manager.dtos.input.CreateLabelDto;
 import com.example.task_manager.entities.BaseEntity;
 
 import jakarta.persistence.Column;
@@ -21,11 +22,16 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.beans.BeanUtils;
 
 @Entity
 @NoArgsConstructor
 @Table(name = "TB_LABELS")
 public class LabelModel extends BaseEntity {
+
+	public LabelModel(CreateLabelDto aDto) {
+		BeanUtils.copyProperties(aDto, this);
+	}
 
     @Id
     @Getter
@@ -51,7 +57,8 @@ public class LabelModel extends BaseEntity {
     @Getter
     @NotBlank
     @Column(nullable = false, length = 20)
-    private String color;
+    @Size(max = 20)
+    private String color = "#B0C4DE";
 
     @ManyToMany(mappedBy = "labels")
     private Set<TaskModel> tasks = new HashSet<>();
