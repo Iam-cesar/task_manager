@@ -1,0 +1,41 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext" xmlns:pro="http://www.liquibase.org/xml/ns/pro" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd http://www.liquibase.org/xml/ns/pro http://www.liquibase.org/xml/ns/pro/liquibase-pro-latest.xsd http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+    <changeSet author="abj (generated)" id="1791223697531-5">
+        <dropForeignKeyConstraint baseTableName="tb_tasks_labels" constraintName="fk_tasks_labels_label"/>
+    </changeSet>
+    <changeSet author="abj (generated)" id="1791223697531-6">
+        <dropForeignKeyConstraint baseTableName="tb_tasks_labels" constraintName="fk_tasks_labels_task"/>
+    </changeSet>
+    <changeSet author="abj (generated)" id="1791223697531-1">
+        <createSequence incrementBy="50" sequenceName="task_label_seq" startValue="1"/>
+    </changeSet>
+    <changeSet author="abj (generated)" id="1791223697531-2">
+        <createTable tableName="tb_task_labels">
+            <column name="id" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP(6) WITH TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP(6) WITH TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="INTEGER"/>
+            <column name="label_id" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="task_id" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="abj (generated)" id="1791223697531-3">
+        <addForeignKeyConstraint baseColumnNames="label_id" baseTableName="tb_task_labels" constraintName="fk_tasks_labels_label" deferrable="false" initiallyDeferred="false" referencedColumnNames="id" referencedTableName="tb_labels" validate="true"/>
+    </changeSet>
+    <changeSet author="abj (generated)" id="1791223697531-4">
+        <addForeignKeyConstraint baseColumnNames="task_id" baseTableName="tb_task_labels" constraintName="fk_tasks_labels_task" deferrable="false" initiallyDeferred="false" referencedColumnNames="id" referencedTableName="tb_tasks" validate="true"/>
+    </changeSet>
+    <changeSet author="abj (generated)" id="1791223697531-7">
+        <dropTable tableName="tb_tasks_labels"/>
+    </changeSet>
+</databaseChangeLog>

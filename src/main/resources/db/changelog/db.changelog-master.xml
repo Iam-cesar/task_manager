@@ -10,5 +10,10 @@
     <include file="db/changelog/changes/003-add-project-member-table.xml"/>
     <include file="db/changelog/changes/004-add-project-label-table.xml"/>
     <include file="db/changelog/changes/005-drop-foreign-key-constraint.xml"/>
+    <include file="db/changelog/changes/006-add-label-fulltext-index.xml"/>
+    <include file="db/changelog/changes/007-add-tasks-labels-task.xml"/>
+    <include file="db/changelog/changes/008-add-projects-fulltext-index.xml"/>
+    <include file="db/changelog/changes/009-add-users-fulltext-index.xml"/>
+    <include file="db/changelog/changes/010-add-tasks-fulltext-index.xml"/>
 
 </databaseChangeLog>

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+    <changeSet author="abj" id="006-add-label-fulltext-index">
+        <sql>
+            CREATE INDEX idx_tb_labels_name_fts
+            ON tb_labels
+            USING GIN (to_tsvector('simple', name))
+        </sql>
+        <rollback>
+            DROP INDEX idx_tb_labels_name_fts
+        </rollback>
+    </changeSet>
+</databaseChangeLog>
