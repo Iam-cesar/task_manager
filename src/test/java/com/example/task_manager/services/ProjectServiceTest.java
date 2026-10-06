@@ -27,7 +27,9 @@ import com.example.task_manager.exceptions.ProjectAlreadyExistsException;
 import com.example.task_manager.exceptions.ProjectNotFoundException;
 import com.example.task_manager.models.ProjectModel;
 import com.example.task_manager.models.UserModel;
+import com.example.task_manager.repositories.ProjectMemberRepository;
 import com.example.task_manager.repositories.ProjectRepository;
+import com.example.task_manager.repositories.UserRepository;
 
 @ExtendWith(MockitoExtension.class)
 class ProjectServiceTest {
@@ -36,7 +38,10 @@ class ProjectServiceTest {
     private ProjectRepository projectRepository;
 
     @Mock
-    private UserService userService;
+    private ProjectMemberRepository projectMemberRepository;
+
+    @Mock
+    private UserRepository userRepository;
 
     @InjectMocks
     private ProjectService projectService;
@@ -59,7 +64,7 @@ class ProjectServiceTest {
         @DisplayName("Should save project successfully when project name is unique for owner")
         void shouldSaveProjectSuccessfully() {
             CreateProjectDto dto = new CreateProjectDto("New Project", "Description", 1);
-            when(userService.findById(1)).thenReturn(mockOwner);
+            when(userRepository.findById(1)).thenReturn(Optional.of(mockOwner));
             when(projectRepository.existsByProjectOwnerIdAndName(1, "New Project")).thenReturn(false);
             when(projectRepository.saveAndFlush(any(ProjectModel.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -75,7 +80,7 @@ class ProjectServiceTest {
         @DisplayName("Should throw ProjectAlreadyExistsException when project with same name already exists for owner")
         void shouldThrowExceptionWhenProjectNameAlreadyExistsForOwner() {
             CreateProjectDto dto = new CreateProjectDto("Existing Project", "Description", 1);
-            when(userService.findById(1)).thenReturn(mockOwner);
+            when(userRepository.findById(1)).thenReturn(Optional.of(mockOwner));
             when(projectRepository.existsByProjectOwnerIdAndName(1, "Existing Project")).thenReturn(true);
 
             assertThrows(ProjectAlreadyExistsException.class, () -> projectService.saveAndFlush(dto));
@@ -103,7 +108,7 @@ class ProjectServiceTest {
             existing.setName("Old Name");
             existing.setProject_owner(mockOwner);
 
-            when(projectRepository.findById(1)).thenReturn(Optional.of(existing));
+            when(projectRepository.findByIdWithRelations(1)).thenReturn(Optional.of(existing));
             when(projectRepository.existsByProjectOwnerIdAndName(1, "New Name")).thenReturn(false);
             when(projectRepository.saveAndFlush(any(ProjectModel.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -122,7 +127,7 @@ class ProjectServiceTest {
             existing.setName("Old Name");
             existing.setProject_owner(mockOwner);
 
-            when(projectRepository.findById(1)).thenReturn(Optional.of(existing));
+            when(projectRepository.findByIdWithRelations(1)).thenReturn(Optional.of(existing));
             when(projectRepository.existsByProjectOwnerIdAndName(1, "Existing Name")).thenReturn(true);
 
             UpdateProjectDto dto = new UpdateProjectDto("Existing Name", "New Description");
@@ -142,22 +147,22 @@ class ProjectServiceTest {
             ReflectionTestUtils.setField(project, "id", 1);
             project.setName("Sample Project");
 
-            when(projectRepository.findById(1)).thenReturn(Optional.of(project));
+            when(projectRepository.findByIdWithRelations(1)).thenReturn(Optional.of(project));
 
             assertDoesNotThrow(() -> projectService.delete(1));
 
-            verify(projectRepository).findById(1);
+            verify(projectRepository).findByIdWithRelations(1);
             verify(projectRepository).deleteById(1);
         }
 
         @Test
         @DisplayName("Should throw ProjectNotFoundException when project does not exist")
         void shouldThrowExceptionWhenProjectNotFound() {
-            when(projectRepository.findById(999)).thenReturn(Optional.empty());
+            when(projectRepository.findByIdWithRelations(999)).thenReturn(Optional.empty());
 
             assertThrows(ProjectNotFoundException.class, () -> projectService.delete(999));
 
-            verify(projectRepository).findById(999);
+            verify(projectRepository).findByIdWithRelations(999);
         }
     }
 }

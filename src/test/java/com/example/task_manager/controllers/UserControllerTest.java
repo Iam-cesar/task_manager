@@ -167,7 +167,7 @@ class UserControllerTest {
                     .andExpect(jsonPath("$.id", is(1)))
                     .andExpect(jsonPath("$.name", is("John Doe")))
                     .andExpect(jsonPath("$.email", is("john@example.com")))
-                    .andExpect(jsonPath("$._links.self.href", containsString("/users")));
+                    .andExpect(jsonPath("$._links.users.href", containsString("/users")));
         }
 
         @Test

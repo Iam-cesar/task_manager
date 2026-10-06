@@ -170,7 +170,7 @@ class ProjectsControllerTest {
         void shouldReturnAllProjectsWithHateoasLinks() throws Exception {
             ProjectModel project1 = createMockProject(1, "Project Alpha", "First project", mockOwner);
             ProjectModel project2 = createMockProject(2, "Project Beta", "Second project", mockOwner);
-            when(projectService.findAll()).thenReturn(List.of(project1, project2));
+            when(projectService.findAllWithRelations()).thenReturn(List.of(project1, project2));
 
             mockMvc.perform(get("/projects"))
                     .andExpect(status().isOk())
@@ -188,7 +188,7 @@ class ProjectsControllerTest {
         @Test
         @DisplayName("Should return 200 OK with empty list when no projects exist")
         void shouldReturnEmptyListWhenNoProjects() throws Exception {
-            when(projectService.findAll()).thenReturn(Collections.emptyList());
+            when(projectService.findAllWithRelations()).thenReturn(Collections.emptyList());
 
             mockMvc.perform(get("/projects"))
                     .andExpect(status().isOk())
@@ -212,7 +212,7 @@ class ProjectsControllerTest {
                     .andExpect(jsonPath("$.name", is("Task Manager API")))
                     .andExpect(jsonPath("$.description", is("Spring Boot Project")))
                     .andExpect(jsonPath("$.project_owner.name", is("Owner User")))
-                    .andExpect(jsonPath("$._links.self.href", containsString("/projects")));
+                    .andExpect(jsonPath("$._links.projects.href", containsString("/projects")));
         }
 
         @Test
