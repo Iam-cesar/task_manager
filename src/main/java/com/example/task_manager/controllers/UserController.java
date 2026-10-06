@@ -60,9 +60,9 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<UserResponseDto> getUserById(@PathVariable int anId)  {
+    public ResponseEntity<UserResponseDto> getUserById(@PathVariable int id)  {
 
-        var user = new UserResponseDto(userService.findById(anId));
+        var user = new UserResponseDto(userService.findById(id));
         user.add(linkTo(methodOn(UserController.class).getAllUsers()).withRel("users"));
 
         return ResponseEntity.ok(user);
@@ -70,25 +70,25 @@ public class UserController {
 
     @PatchMapping("/{id}")
     public ResponseEntity<UserResponseDto> updateUser (
-        @PathVariable int anId,
+        @PathVariable int id,
         @RequestBody @NonNull UpdateUserDto aUser
     ) {
-        var userUpdated = new UserResponseDto(userService.updateAndFlush(anId, aUser));
+        var userUpdated = new UserResponseDto(userService.updateAndFlush(id, aUser));
 
         return ResponseEntity.ok(userUpdated);
     }
 
     @PostMapping("/{id}/status")
-    public ResponseEntity<UserResponseDto> status(@PathVariable int anId) {
+    public ResponseEntity<UserResponseDto> status(@PathVariable int id) {
 
-        UserModel user = userService.status(anId);
+        UserModel user = userService.status(id);
 
         return ResponseEntity.ok(new UserResponseDto(user));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteById(@PathVariable int anId) {
-        userService.deleteById(anId);
+    public ResponseEntity<Void> deleteById(@PathVariable int id) {
+        userService.deleteById(id);
 
         return ResponseEntity.noContent().build();
     }

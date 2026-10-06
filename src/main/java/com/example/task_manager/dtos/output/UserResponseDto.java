@@ -27,7 +27,7 @@ public class UserResponseDto extends RepresentationModel<UserResponseDto> {
 
     Instant created_at;
 
-    public UserResponseDto(UserModel user) {
-        BeanUtils.copyProperties(user, this);
+    public UserResponseDto(UserModel aUser) {
+        BeanUtils.copyProperties(aUser, this);
     }
 }

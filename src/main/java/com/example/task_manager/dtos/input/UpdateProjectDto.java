@@ -6,4 +6,6 @@ public record UpdateProjectDto(
     @Size(min = 1, max = 60) String name,
 
     @Size(min = 1, max = 255) String description
-) {}
+) {
+
+}

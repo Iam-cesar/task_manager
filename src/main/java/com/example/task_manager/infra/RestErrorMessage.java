@@ -3,13 +3,7 @@ package com.example.task_manager.infra;
 import org.springframework.http.HttpStatus;
 
 import lombok.AllArgsConstructor;
-import lombok.Getter;
 import lombok.Setter;
 
-@AllArgsConstructor
-@Getter
-@Setter
-public class RestErrorMessage {
-    private final HttpStatus status;
-    private final String message;
+public record RestErrorMessage(HttpStatus status, String message) {
 }

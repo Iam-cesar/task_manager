@@ -38,7 +38,7 @@ public class ProjectsController {
     @PostMapping
     public ResponseEntity<ProjectResponseDto> createProject(
             @RequestBody @Valid @NonNull final CreateProjectDto aDto,
-            @NonNull UriComponentsBuilder uriBuilder
+            @NonNull final UriComponentsBuilder uriBuilder
     ) {
         var projectCreated = new ProjectResponseDto(projectService.saveAndFlush(aDto));
         
@@ -48,38 +48,38 @@ public class ProjectsController {
     }
 
     @PostMapping("/{id}/status")
-    public ResponseEntity<ProjectResponseDto> status(@PathVariable int anId) {
-        var projectResponseDto = new ProjectResponseDto(projectService.status(anId));
+    public ResponseEntity<ProjectResponseDto> status(@PathVariable final int id) {
+        var projectResponseDto = new ProjectResponseDto(projectService.status(id));
 
         return ResponseEntity.ok(projectResponseDto);
     }
 
     @PostMapping("/{id}/add-members")
     public ResponseEntity<ProjectResponseDto> addMembers(
-        @PathVariable final int anId,
+        @PathVariable final int id,
         @RequestBody @Valid @NonNull MemberIdsDto aDto
     ) {
         var projectResponseDto = new ProjectResponseDto(
-            projectService.addMembers(anId, aDto.member_ids()));
+            projectService.addMembers(id, aDto.member_ids()));
 
         return ResponseEntity.ok(projectResponseDto);
     }
 
     @PostMapping("/{id}/remove-members")
     public ResponseEntity<ProjectResponseDto> removeMembers(
-        @PathVariable final int anId,
+        @PathVariable final int id,
         @RequestBody @Valid @NonNull MemberIdsDto aListOfMemberIds
     ) {
         var projectResponseDto = new ProjectResponseDto(
-            projectService.removeMembers(anId, aListOfMemberIds.member_ids()));
+            projectService.removeMembers(id, aListOfMemberIds.member_ids()));
 
         return ResponseEntity.ok(projectResponseDto);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ProjectResponseDto> getProjectById(@PathVariable int anId) {
+    public ResponseEntity<ProjectResponseDto> getProjectById(@PathVariable final int id) {
 
-        var project = new ProjectResponseDto(projectService.findById(anId));
+        var project = new ProjectResponseDto(projectService.findById(id));
 
         project.add(linkTo(methodOn(ProjectsController.class)
             .getAllProjects()).withRel("projects"));

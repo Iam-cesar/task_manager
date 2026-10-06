@@ -13,5 +13,8 @@ public interface ProjectMemberRepository extends JpaRepository<ProjectMemberMode
 
     @Modifying(clearAutomatically = true)
     @Query("DELETE FROM ProjectMemberModel pm WHERE pm.project.id = :projectId AND pm.user.id IN :userIds")
-    void deleteByProjectIDAndUserIdsIn (@Param("projectId") Integer projectId, @Param("userIds") List<Integer> userIds);
+    void deleteByProjectIDAndUserIdsIn (
+        @Param("projectId") Integer projectId,
+        @Param("userIds") List<Integer> userIds
+    );
 }
