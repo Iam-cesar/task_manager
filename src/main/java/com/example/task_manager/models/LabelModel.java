@@ -22,7 +22,6 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.springframework.beans.BeanUtils;
 
 @Entity
 @NoArgsConstructor
@@ -30,7 +29,8 @@ import org.springframework.beans.BeanUtils;
 public class LabelModel extends BaseEntity {
 
 	public LabelModel(CreateLabelDto aDto) {
-		BeanUtils.copyProperties(aDto, this);
+		this.name = aDto.name();
+		this.color = aDto.color();
 	}
 
     @Id
