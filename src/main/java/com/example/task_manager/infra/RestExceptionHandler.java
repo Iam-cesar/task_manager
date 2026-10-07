@@ -60,4 +60,10 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
 		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(treatedMessage);
 	}
 
+	// TaskNotFoundException
+	@ExceptionHandler(TaskNotFoundException.class)
+	private @NonNull ResponseEntity<RestErrorMessage> TaskNotFoundExceptionHandler(@NonNull TaskNotFoundException e) {
+		RestErrorMessage treatedMessage = new RestErrorMessage(HttpStatus.NOT_FOUND, e.getMessage());
+		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(treatedMessage);
+	}
 }

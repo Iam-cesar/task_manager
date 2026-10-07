@@ -27,17 +27,19 @@ public class ProjectService {
     private final ProjectMemberRepository projectMemberRepository;
     private final UserRepository userRepository;
 
+	@Transactional
     public ProjectModel saveAndFlush(
-            @NonNull final CreateProjectDto aDto) throws IllegalArgumentException {
+		@NonNull final CreateProjectDto aDto
+	) throws IllegalArgumentException {
 
-        if (aDto.getProject_owner_id() == null) {
+        if (aDto.project_owner_id() == null) {
             throw new IllegalArgumentException("Project owner id must not be null");
         }
 
-        final var user = userRepository.findById(aDto.getProject_owner_id())
+        final var user = userRepository.findById(aDto.project_owner_id())
             .orElseThrow(UserNotFoundException::new);
 
-        if (existsByOwnerIdAndName(user.getId(), aDto.getName())) {
+        if (existsByOwnerIdAndName(user.getId(), aDto.name())) {
             throw new ProjectAlreadyExistsException();
         }
 
@@ -52,7 +54,6 @@ public class ProjectService {
             final int anId,
             @NonNull final List<Integer> aListOfIds
     ) {
-
         final var project = findById(anId);
 
         final List<UserModel> alistOfUsersToAdd = userRepository.findAllById(aListOfIds);
@@ -67,7 +68,6 @@ public class ProjectService {
             final int anId,
             @NonNull final List<Integer> aListOfIds
     ) {
-
         final var project = findById(anId);
 
         if (!aListOfIds.isEmpty()) {
@@ -103,22 +103,36 @@ public class ProjectService {
     }
 
     public ProjectModel findById(final Integer anId) {
+
         return projectRepository.findByIdWithRelations(anId)
-                .orElseThrow(ProjectNotFoundException::new);
+            .orElseThrow(ProjectNotFoundException::new);
     }
+
+	public List<ProjectModel> searchByNameAndDescription(@NonNull final String aName) {
+		List<Integer> projectIds = projectRepository.searchIdsByNameAndDescription(aName);
+		if (projectIds.isEmpty()) {
+			return List.of();
+		}
+
+		return projectRepository.findAllWithRelationsByIdIn(projectIds);
+	}
 
     public List<ProjectModel> findAllWithRelations() {
         return projectRepository.findAllWithRelations();
     }
 
-    public List<ProjectModel> findAll() {
-        return projectRepository.findAll();
+    public List<ProjectModel> findAll(final String aSearch) {
+
+	    return  aSearch == null || aSearch.isBlank()
+		    ? findAllWithRelations()
+		    : searchByNameAndDescription(aSearch);
     }
 
+	@Transactional
     public ProjectModel updateAndFlush(
         final int anId,
-        @NonNull final UpdateProjectDto aDto) {
-
+        @NonNull final UpdateProjectDto aDto
+    ) {
         final var project = findById(anId);
 
         if (aDto.name() != null && !aDto.name().equals(project.getName())) {
@@ -143,7 +157,7 @@ public class ProjectService {
         final var project = findById(anId);
 
         if (project != null) {
-            projectRepository.deleteById(anId);
+            projectRepository.deleteById(project.getId());
         }
     }
 

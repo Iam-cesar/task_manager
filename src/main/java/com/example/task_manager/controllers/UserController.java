@@ -6,16 +6,10 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 import java.net.URI;
 import java.util.List;
 
+import com.example.task_manager.helpers.ConvertRepresentationModel;
 import org.jspecify.annotations.NonNull;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import com.example.task_manager.dtos.input.UpdateUserDto;
@@ -38,16 +32,19 @@ public class UserController {
         @RequestBody @Valid @NonNull UserModel aUser,
         @NonNull UriComponentsBuilder uriBuilder
     ) {
-        var userCreated = new UserResponseDto(userService.saveAndFlush(aUser));
+        final var userCreated = new UserResponseDto(userService.saveAndFlush(aUser));
         URI uri = uriBuilder.path("/users/{id}").buildAndExpand(userCreated.getId()).toUri();
 
         return ResponseEntity.created(uri).body(userCreated);
     }
 
     @GetMapping
-    public ResponseEntity<List<UserResponseDto>> getAllUsers() {
+    public ResponseEntity<List<UserResponseDto>> getAllUsers(
+	    @RequestParam(required = false) String search
+    ) {
 
-        List<UserResponseDto> users = convertUsersToList(userService.findAll());
+        final List<UserResponseDto> users = ConvertRepresentationModel
+	        .toList(userService.findAll(search),  UserResponseDto::new);
 
         if  (!users.isEmpty()) {
             for (UserResponseDto user : users) {
@@ -62,8 +59,8 @@ public class UserController {
     @GetMapping("/{id}")
     public ResponseEntity<UserResponseDto> getUserById(@PathVariable int id)  {
 
-        var user = new UserResponseDto(userService.findById(id));
-        user.add(linkTo(methodOn(UserController.class).getAllUsers()).withRel("users"));
+        final var user = new UserResponseDto(userService.findById(id));
+        user.add(linkTo(methodOn(UserController.class).getAllUsers(null)).withRel("users"));
 
         return ResponseEntity.ok(user);
     }
@@ -73,7 +70,7 @@ public class UserController {
         @PathVariable int id,
         @RequestBody @NonNull UpdateUserDto aUser
     ) {
-        var userUpdated = new UserResponseDto(userService.updateAndFlush(id, aUser));
+        final var userUpdated = new UserResponseDto(userService.updateAndFlush(id, aUser));
 
         return ResponseEntity.ok(userUpdated);
     }
@@ -91,10 +88,5 @@ public class UserController {
         userService.deleteById(id);
 
         return ResponseEntity.noContent().build();
-    }
-
-    private @NonNull List<UserResponseDto> convertUsersToList (@NonNull final List<UserModel> alistOfUserModels) {
-
-        return alistOfUserModels.stream().map(UserResponseDto::new).toList();
     }
 }

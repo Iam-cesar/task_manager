@@ -1,16 +1,17 @@
 package com.example.task_manager.dtos.input;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
-public record UpdateLabelDto (
+import java.util.List;
+
+public record UpdateTaskDto(
 	@NotBlank
 	@Size(min = 3, max = 60)
-	String name,
+	String title,
 
-	@Size(min = 3, max = 20)
-	@NotBlank
-	String color
+	@Size(max = 255)
+	String description
 ) {
-
 }

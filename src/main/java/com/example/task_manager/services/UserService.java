@@ -14,6 +14,7 @@ import com.example.task_manager.models.UserModel;
 import com.example.task_manager.repositories.UserRepository;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -21,6 +22,7 @@ public class UserService {
 
     private final UserRepository userRepository;
 
+	@Transactional
     public UserModel saveAndFlush(@NonNull final UserModel aUser) throws UserAlreadyExistsException {
 
         final Optional<UserModel> userServiceByEmail = userRepository.findByEmail(aUser.getEmail());
@@ -33,12 +35,29 @@ public class UserService {
         return userRepository.saveAndFlush(aUser);
     }
 
-    public List<UserModel> findAll() { return userRepository.findAll(); }
+	public List<UserModel> searchByNameAndDescription(@NonNull final String aName) {
+
+		List<UserModel> users = userRepository.searchByNameAndEmail(aName);
+
+		if (users.isEmpty()) {
+			return List.of();
+		}
+
+		return users;
+	}
+
+    public List<UserModel> findAll(final String aSearch) {
+
+		return aSearch == null || aSearch.isBlank()
+			? userRepository.findAll()
+			:searchByNameAndDescription(aSearch);
+	}
 
     public UserModel findById(final int anId) throws UserNotFoundException {
         return userRepository.findById(anId).orElseThrow(UserNotFoundException::new);
     }
 
+	@Transactional
     public UserModel updateAndFlush(
             final int anId,
             @NonNull final UpdateUserDto updateUserDto
@@ -80,7 +99,7 @@ public class UserService {
 
         UserModel user = findById(anId);
 
-        if (user != null) { userRepository.deleteById(anId); }
+        if (user != null) { userRepository.deleteById(user.getId()); }
     }
 
     public boolean existsByEmail(final String anEmail) {

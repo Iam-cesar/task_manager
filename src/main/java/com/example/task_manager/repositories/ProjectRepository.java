@@ -37,13 +37,22 @@ public interface ProjectRepository extends JpaRepository<ProjectModel, Integer> 
     Optional<ProjectModel> findByIdWithRelations(@Param("id") Integer anId);
 
 	@Query(value = """
-		SELECT p.*
+		SELECT p.id
 		FROM TB_PROJECTS p
 		WHERE to_tsvector(
 			'simple',
 			coalesce(p.name, '') || ' ' || coalesce(p.description, '')
-		) @@ websearch_to_tsquery('simple', :search)
+		) @@ websearch_to_tsquery('simple', :name)
 		ORDER BY p.name ASC
 	""", nativeQuery = true)
-	public List<ProjectModel> searchByNameAndDescription(@Param("search") String aSearch);
+	List<Integer> searchIdsByNameAndDescription(@Param("name") String aName);
+
+	@Query("""
+		SELECT DISTINCT p FROM ProjectModel p
+		LEFT JOIN FETCH p.project_owner
+		LEFT JOIN FETCH p.members
+		WHERE p.id IN :ids
+		ORDER BY p.name ASC
+	""")
+	List<ProjectModel> findAllWithRelationsByIdIn(@Param("ids") List<Integer> ids);
 }

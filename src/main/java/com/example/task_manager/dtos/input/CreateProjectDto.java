@@ -1,5 +1,9 @@
 package com.example.task_manager.dtos.input;
 
+import com.example.task_manager.models.UserModel;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import org.springframework.beans.BeanUtils;
 
 import com.example.task_manager.models.ProjectModel;
@@ -8,17 +12,16 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class CreateProjectDto {
-    String name;
+public record CreateProjectDto(
 
-    String description;
+	@NotBlank
+	@Size(min = 3, max = 60)
+	 String name,
 
-    Integer project_owner_id;
+	@Size(max = 255)
+	String description,
 
-    public CreateProjectDto(ProjectModel projectModel) {
-        BeanUtils.copyProperties(projectModel, this);
-    }
+	@NotNull
+	Integer project_owner_id
+) {
 }

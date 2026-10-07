@@ -5,11 +5,11 @@ import jakarta.validation.constraints.Size;
 
 public record CreateLabelDto(
 	@NotBlank
-	@Size(max = 60)
+	@Size(min = 3, max = 60)
 	String name,
 
 	@NotBlank
-	@Size(max = 20)
+	@Size(min = 4, max = 20)
 	String color
 ) {
 }

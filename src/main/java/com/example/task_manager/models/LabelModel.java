@@ -1,9 +1,9 @@
 package com.example.task_manager.models;
 
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import com.example.task_manager.dtos.input.CreateLabelDto;
 import com.example.task_manager.entities.BaseEntity;
@@ -13,7 +13,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.ManyToMany;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.PreRemove;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
@@ -60,18 +60,18 @@ public class LabelModel extends BaseEntity {
     @Size(max = 20)
     private String color = "#B0C4DE";
 
-    @ManyToMany(mappedBy = "labels")
-    private Set<TaskModel> tasks = new HashSet<>();
+    @OneToMany(mappedBy = "label")
+    private Set<TaskLabelModel> taskLabels = new HashSet<>();
 
     @PreRemove
     private void removeLabelFromTasks() {
-        for (TaskModel task : new HashSet<>(tasks)) {
-            task.removeLabel(this);
+        for (TaskLabelModel taskLabel : new HashSet<>(taskLabels)) {
+            taskLabel.getTask().removeLabel(this);
         }
     }
 
-    Set<TaskModel> internalTasks() {
-        return tasks;
+    Set<TaskLabelModel> internalTaskLabels() {
+        return taskLabels;
     }
 
     @Override
@@ -87,6 +87,8 @@ public class LabelModel extends BaseEntity {
     }
 
     public Set<TaskModel> getTasks() {
-        return Collections.unmodifiableSet(tasks);
+        return taskLabels.stream()
+            .map(TaskLabelModel::getTask)
+            .collect(Collectors.toUnmodifiableSet());
     }
 }

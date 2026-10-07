@@ -1,11 +1,12 @@
 package com.example.task_manager.models;
 
 import java.time.Instant;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
+import com.example.task_manager.dtos.input.CreateTaskDto;
 import jakarta.persistence.*;
 import org.hibernate.annotations.ColumnDefault;
 
@@ -19,6 +20,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.beans.BeanUtils;
 
 @Getter
 @Entity
@@ -33,6 +35,21 @@ import lombok.Setter;
     }
 )
 public class TaskModel extends BaseEntity {
+
+	public TaskModel(ProjectMemberModel pm) { BeanUtils.copyProperties(pm, this); }
+
+	public TaskModel(
+		CreateTaskDto aDto,
+		ProjectModel pm,
+		UserModel user,
+		Set<LabelModel> labels
+	) {
+		BeanUtils.copyProperties(aDto, this);
+
+		this.project = pm;
+		this.user = user;
+		labels.forEach(this::addLabel);
+	}
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "tasks_seq")
@@ -92,19 +109,8 @@ public class TaskModel extends BaseEntity {
     @ColumnDefault("false")
     private boolean archived = false;
 
-    @ManyToMany
-    @JoinTable(
-        name = "TB_TASK_LABELS",
-        joinColumns = @JoinColumn(
-            name = "task_id",
-            foreignKey = @ForeignKey(name = "fk_tasks_labels_task")
-        ),
-        inverseJoinColumns = @JoinColumn(
-            name = "label_id",
-            foreignKey = @ForeignKey(name = "fk_tasks_labels_label")
-        )
-    )
-    private Set<LabelModel> labels = new HashSet<>();
+    @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<TaskLabelModel> taskLabels = new HashSet<>();
 
     public void start() {
         this.status = TaskStatusEnum.RUNNING;
@@ -152,18 +158,35 @@ public class TaskModel extends BaseEntity {
     }
 
     public void addLabel(LabelModel label) {
-        this.labels.add(label);
-        label.internalTasks().add(this);
+        if (taskLabels.stream().noneMatch(taskLabel -> sameLabel(taskLabel.getLabel(), label))) {
+            TaskLabelModel taskLabel = new TaskLabelModel(this, label);
+            taskLabels.add(taskLabel);
+            label.internalTaskLabels().add(taskLabel);
+        }
     }
 
     public void removeLabel(LabelModel label) {
-        this.labels.remove(label);
-        label.internalTasks().remove(this);
+        taskLabels.removeIf(taskLabel -> {
+            if (sameLabel(taskLabel.getLabel(), label)) {
+                taskLabel.getLabel().internalTaskLabels().remove(taskLabel);
+                return true;
+            }
+            return false;
+        });
+    }
+
+    private boolean sameLabel(LabelModel first, LabelModel second) {
+        if (first == second) {
+            return true;
+        }
+
+        return first != null && second != null
+            && first.getId() != null && first.getId().equals(second.getId());
     }
 
     @PreRemove
     public void clearLabels() {
-        for (LabelModel label : new HashSet<>(this.labels)) {
+        for (LabelModel label : new HashSet<>(getLabels())) {
             removeLabel(label);
         }
     }
@@ -181,6 +204,8 @@ public class TaskModel extends BaseEntity {
     }
 
     public Set<LabelModel> getLabels() {
-        return Collections.unmodifiableSet(labels);
+        return taskLabels.stream()
+            .map(TaskLabelModel::getLabel)
+            .collect(Collectors.toUnmodifiableSet());
     }
 }

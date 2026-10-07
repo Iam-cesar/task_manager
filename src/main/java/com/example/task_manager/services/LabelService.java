@@ -4,7 +4,6 @@ import com.example.task_manager.dtos.input.CreateLabelDto;
 import com.example.task_manager.dtos.input.UpdateLabelDto;
 import com.example.task_manager.exceptions.LabelNotFoundException;
 import com.example.task_manager.models.LabelModel;
-import com.example.task_manager.models.TaskLabelModel;
 import com.example.task_manager.repositories.LabelRepository;
 import jakarta.transaction.Transactional;
 import lombok.NonNull;
@@ -22,36 +21,52 @@ public class LabelService {
 
 	@Transactional
 	public LabelModel saveAndFlush(CreateLabelDto aDto) {
+
 		final var label = new LabelModel(aDto);
 
 		return labelRepository.saveAndFlush(label);
 	}
 
-	public List<LabelModel> findAll() {
-		return labelRepository.findAll();
+	public List<LabelModel> findAll(final String search) {
+
+		return search == null || search.isBlank()
+			? labelRepository.findAllWithTasks()
+			: findByName(search);
 	}
 
-	public List<LabelModel> findByName(@NonNull final String name) {
-		return labelRepository.findByName(name);
+	public List<LabelModel> findByName(@NonNull final String aName) {
+
+		List<Integer> labelIds = labelRepository.searchIdsByName(aName);
+
+		if (labelIds.isEmpty()) {
+			return List.of();
+		}
+
+		return labelRepository.findAllWithTasksByIdIn(labelIds);
 	}
 
-	public LabelModel findById(final int id) {
-		return labelRepository.findById(id).orElseThrow(LabelNotFoundException::new);
+	public LabelModel findById(final int anId) {
+		return labelRepository.findByIdWithTasks(anId)
+			.orElseThrow(LabelNotFoundException::new);
 	}
 
-	public LabelModel updateAndFlush(@NonNull final UpdateLabelDto aDto, final int id) {
-		final var label = findById(id);
+	@Transactional
+	public LabelModel updateAndFlush(
+		final int anId,
+		@NonNull final UpdateLabelDto aDto
+	) {
+		final var label = findById(anId);
 
 		BeanUtils.copyProperties(aDto, label, "id");
 
 		return labelRepository.saveAndFlush(label);
 	}
 
-	public void deleteById(final int id) {
-		var label = findById(id);
+	public void deleteById(final int anId) {
+		var label = findById(anId);
 
 		if (label != null) {
-			labelRepository.deleteById(id);
+			labelRepository.deleteById(label.getId());
 		}
 	}
 }
