@@ -42,21 +42,68 @@ class LabelServiceTest {
     }
 
     @Test
+    void findsAllWithoutSearchFilter() {
+        var labels = List.of(new LabelModel(new CreateLabelDto("Urgent", "#FF0000")));
+        when(labelRepository.findAllWithTasks()).thenReturn(labels);
+
+        assertSame(labels, labelService.findAll(null));
+        assertSame(labels, labelService.findAll("   "));
+        verify(labelRepository, times(2)).findAllWithTasks();
+    }
+
+    @Test
+    void findsAllWithSearchFilter() {
+        var labels = List.of(new LabelModel(new CreateLabelDto("Urgent", "#FF0000")));
+        when(labelRepository.searchIdsByName("urgent")).thenReturn(List.of(1));
+        when(labelRepository.findAllWithTasksByIdIn(List.of(1))).thenReturn(labels);
+
+        assertSame(labels, labelService.findAll("urgent"));
+    }
+
+    @Test
     void findsLabelsByFullTextQuery() {
         var labels = List.of(new LabelModel(new CreateLabelDto("Urgent", "#FF0000")));
-        when(labelRepository.findByName("urgent")).thenReturn(labels);
+        when(labelRepository.searchIdsByName("urgent")).thenReturn(List.of(1));
+        when(labelRepository.findAllWithTasksByIdIn(List.of(1))).thenReturn(labels);
 
         assertSame(labels, labelService.findByName("urgent"));
+    }
+
+    @Test
+    void returnsEmptyListWhenSearchFindsNoIds() {
+        when(labelRepository.searchIdsByName("unknown")).thenReturn(List.of());
+
+        var result = labelService.findByName("unknown");
+
+        assertTrue(result.isEmpty());
+        verify(labelRepository, never()).findAllWithTasksByIdIn(any());
+    }
+
+    @Test
+    void findsLabelById() {
+        var label = new LabelModel(new CreateLabelDto("Urgent", "#FF0000"));
+        when(labelRepository.findByIdWithTasks(1)).thenReturn(Optional.of(label));
+
+        var result = labelService.findById(1);
+
+        assertSame(label, result);
+    }
+
+    @Test
+    void throwsWhenFindingMissingLabelById() {
+        when(labelRepository.findByIdWithTasks(404)).thenReturn(Optional.empty());
+
+        assertThrows(LabelNotFoundException.class, () -> labelService.findById(404));
     }
 
     @Test
     void updatesExistingLabel() {
         var label = new LabelModel(new CreateLabelDto("Old", "#111111"));
         ReflectionTestUtils.setField(label, "id", 7);
-        when(labelRepository.findById(7)).thenReturn(Optional.of(label));
+        when(labelRepository.findByIdWithTasks(7)).thenReturn(Optional.of(label));
         when(labelRepository.saveAndFlush(label)).thenReturn(label);
 
-        var result = labelService.updateAndFlush(new UpdateLabelDto("New", "#222222"), 7);
+        var result = labelService.updateAndFlush(7, new UpdateLabelDto("New", "#222222"));
 
         assertSame(label, result);
         assertEquals("New", result.getName());
@@ -66,11 +113,11 @@ class LabelServiceTest {
 
     @Test
     void throwsWhenUpdatingMissingLabel() {
-        when(labelRepository.findById(404)).thenReturn(Optional.empty());
+        when(labelRepository.findByIdWithTasks(404)).thenReturn(Optional.empty());
 
         assertThrows(
             LabelNotFoundException.class,
-            () -> labelService.updateAndFlush(new UpdateLabelDto("New", "#222222"), 404)
+            () -> labelService.updateAndFlush(404, new UpdateLabelDto("New", "#222222"))
         );
         verify(labelRepository, never()).saveAndFlush(any(LabelModel.class));
     }
@@ -78,7 +125,7 @@ class LabelServiceTest {
     @Test
     void deletesExistingLabel() {
         var label = new LabelModel(new CreateLabelDto("Old", "#111111"));
-        when(labelRepository.findById(7)).thenReturn(Optional.of(label));
+        when(labelRepository.findByIdWithTasks(7)).thenReturn(Optional.of(label));
 
         labelService.deleteById(7);
 
@@ -87,7 +134,7 @@ class LabelServiceTest {
 
     @Test
     void throwsWhenDeletingMissingLabel() {
-        when(labelRepository.findById(404)).thenReturn(Optional.empty());
+        when(labelRepository.findByIdWithTasks(404)).thenReturn(Optional.empty());
 
         assertThrows(LabelNotFoundException.class, () -> labelService.deleteById(404));
         verify(labelRepository, never()).deleteById(404);

@@ -7,6 +7,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -170,7 +171,7 @@ class ProjectsControllerTest {
         void shouldReturnAllProjectsWithHateoasLinks() throws Exception {
             ProjectModel project1 = createMockProject(1, "Project Alpha", "First project", mockOwner);
             ProjectModel project2 = createMockProject(2, "Project Beta", "Second project", mockOwner);
-            when(projectService.findAllWithRelations()).thenReturn(List.of(project1, project2));
+            when(projectService.findAll(null)).thenReturn(List.of(project1, project2));
 
             mockMvc.perform(get("/projects"))
                     .andExpect(status().isOk())
@@ -188,11 +189,27 @@ class ProjectsControllerTest {
         @Test
         @DisplayName("Should return 200 OK with empty list when no projects exist")
         void shouldReturnEmptyListWhenNoProjects() throws Exception {
-            when(projectService.findAllWithRelations()).thenReturn(Collections.emptyList());
+            when(projectService.findAll(null)).thenReturn(Collections.emptyList());
 
             mockMvc.perform(get("/projects"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$", hasSize(0)));
+        }
+
+        @Test
+        @DisplayName("Should search projects when search query parameter is provided")
+        void shouldSearchProjectsByQueryParameter() throws Exception {
+            ProjectModel project = createMockProject(1, "Blue roadmap", "Planning for release", mockOwner);
+            when(projectService.findAll("blue release"))
+                .thenReturn(List.of(project));
+
+            mockMvc.perform(get("/projects").param("search", "blue release"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].name", is("Blue roadmap")))
+                .andExpect(jsonPath("$[0].links[0].href", containsString("/projects/1")));
+
+            verify(projectService).findAll("blue release");
         }
     }
 

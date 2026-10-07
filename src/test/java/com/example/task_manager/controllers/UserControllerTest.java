@@ -126,7 +126,7 @@ class UserControllerTest {
         void shouldReturnAllUsersWithHateoasLinks() throws Exception {
             UserModel user1 = createMockUser(1, "User One", "user1@example.com");
             UserModel user2 = createMockUser(2, "User Two", "user2@example.com");
-            when(userService.findAll()).thenReturn(List.of(user1, user2));
+            when(userService.findAll(null)).thenReturn(List.of(user1, user2));
 
             mockMvc.perform(get("/users"))
                     .andExpect(status().isOk())
@@ -144,7 +144,7 @@ class UserControllerTest {
         @Test
         @DisplayName("Should return 200 OK with empty list when no users exist")
         void shouldReturnEmptyListWhenNoUsers() throws Exception {
-            when(userService.findAll()).thenReturn(Collections.emptyList());
+            when(userService.findAll(null)).thenReturn(Collections.emptyList());
 
             mockMvc.perform(get("/users"))
                     .andExpect(status().isOk())
