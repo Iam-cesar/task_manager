@@ -35,10 +35,10 @@ public interface TaskRepository extends JpaRepository<TaskModel, Integer> {
 
 	@Query("""
 		SELECT DISTINCT t FROM TaskModel t
-		JOIN FETCH t.project p
+		LEFT JOIN FETCH t.project p
 		LEFT JOIN FETCH p.project_owner
 		LEFT JOIN FETCH p.members
-		JOIN FETCH t.user
+		LEFT JOIN FETCH t.user
 		LEFT JOIN FETCH t.taskLabels taskLabel
 		LEFT JOIN FETCH taskLabel.label
 		WHERE t.id IN :ids

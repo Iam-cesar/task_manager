@@ -2,12 +2,16 @@ package com.example.task_manager;
 
 import com.example.task_manager.dtos.input.CreateLabelDto;
 import com.example.task_manager.dtos.input.CreateProjectDto;
+import com.example.task_manager.dtos.input.CreateTaskDto;
 import com.example.task_manager.models.LabelModel;
 import com.example.task_manager.models.ProjectModel;
+import com.example.task_manager.models.TaskModel;
 import com.example.task_manager.models.UserModel;
 import com.example.task_manager.repositories.LabelRepository;
 import com.example.task_manager.repositories.ProjectRepository;
+import com.example.task_manager.repositories.TaskRepository;
 import com.example.task_manager.repositories.UserRepository;
+import com.example.task_manager.services.TaskService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -34,6 +38,12 @@ class TaskManagerApplicationTests {
 
 	@Autowired
 	private UserRepository userRepository;
+
+	@Autowired
+	private TaskRepository taskRepository;
+
+	@Autowired
+	private TaskService taskService;
 
 	@Test
 	void contextLoads() {
@@ -90,6 +100,44 @@ class TaskManagerApplicationTests {
 		assertEquals(3, page.getTotalElements());
 		assertEquals(1, page.getContent().size());
 		assertEquals(users.get(2).getId(), page.getContent().get(0));
+	}
+
+	@Test
+	@Transactional
+	void returnsTasksFromPaginatedIdQuery() {
+		var owner = createUser("Task Owner", "task-owner@example.com");
+		owner = userRepository.saveAndFlush(owner);
+
+		var project = new ProjectModel(new CreateProjectDto(
+			"Task pagination project",
+			"Project for pagination test",
+			owner.getId()
+		));
+		project.setProject_owner(owner);
+		project = projectRepository.saveAndFlush(project);
+
+		var firstTask = new TaskModel(
+			new CreateTaskDto("Task pagination first", null, project.getId(), owner.getId(), null),
+			project,
+			owner,
+			java.util.Set.of()
+		);
+		var secondTask = new TaskModel(
+			new CreateTaskDto("Task pagination second", null, project.getId(), owner.getId(), null),
+			project,
+			owner,
+			java.util.Set.of()
+		);
+		taskRepository.saveAllAndFlush(java.util.List.of(firstTask, secondTask));
+
+		var page = taskService.findAll(null, PageRequest.of(0, 10));
+
+		assertEquals(2, page.getTotalElements());
+		assertEquals(2, page.getContent().size());
+		assertEquals(
+			java.util.List.of(firstTask.getId(), secondTask.getId()),
+			page.getContent().stream().map(TaskModel::getId).toList()
+		);
 	}
 
 	private UserModel createUser(String name, String email) {
