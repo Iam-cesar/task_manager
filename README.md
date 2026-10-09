@@ -168,7 +168,7 @@ O desafio está concluído quando:
 - A aplicação sobe com um único comando de composição (aplicação + banco) e o schema é criado por migrations, sem geração automática de DDL em produção.
 - Todas as regras de negócio listadas são verificáveis por chamadas HTTP: cada violação produz o código de status correto e um corpo de erro no formato padrão, incluindo qual campo falhou quando for validação.
 - Tentar uma transição de status ilegítima falha de forma explícita e não altera o estado armazenado.
-- Listagens retornam dados paginados com metadados de página, respeitam ordenação solicitada, impõem limite máximo de tamanho de página e aceitam filtros combinados.
+- Listagens retornam dados paginados com metadados de página, respeitam ordenação solicitada, impõem limite máximo de 100 itens por página (pedidos maiores são limitados a 100) e aceitam filtros combinados.
 - A listagem de tarefas com responsável e etiquetas é servida com número de consultas SQL constante relativamente à quantidade de itens retornados — e você consegue demonstrar isso.
 - Existe cobertura de testes automatizados que exercita as regras de negócio e os principais fluxos HTTP, e a suíte roda de ponta a ponta sem depender de banco instalado manualmente na máquina.
 - A documentação da API está acessível e reflete os contratos reais.

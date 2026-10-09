@@ -46,6 +46,18 @@ class TaskControllerTest {
     }
 
     @Test
+    void capsRequestedPageSizeAtConfiguredMaximum() throws Exception {
+        var pageable = PageRequest.of(0, 100);
+        when(taskService.findAll(null, false, pageable))
+            .thenReturn(new PageImpl<>(List.of(), pageable, 0));
+
+        mockMvc.perform(get("/tasks").param("size", "1000"))
+            .andExpect(status().isOk());
+
+        verify(taskService).findAll(null, false, pageable);
+    }
+
+    @Test
     void returnsStatusSummary() throws Exception {
         when(taskService.summarizeByStatus())
             .thenReturn(List.of(new TaskStatusCountDto(TaskStatusEnum.PENDING, 3)));
