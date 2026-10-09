@@ -1,142 +1,92 @@
-# 1 · API de Gerenciamento de Tarefas
+# Task Manager API
 
-## Nível **Fácil**
+API REST para organizar usuários, projetos, tarefas e etiquetas. Este projeto nasceu como meu primeiro contato prático com **Java** e **Spring Boot**: construí uma aplicação completa para aprender a linguagem e o ecossistema enquanto resolvia problemas comuns de backend, como persistência, validação, regras de negócio, paginação e testes.
 
-## Objetivo
+É um projeto de estudo e portfólio, não um produto pronto para produção. Desenvolvi os recursos gradualmente, investigando erros e usando os testes para consolidar o que aprendi.
 
-Construir o serviço de backend que sustenta o gerenciamento de tarefas de uma equipe, com foco em estabelecer uma base sólida de aplicação Spring Boot: modelagem de domínio persistente, contratos de API estáveis, validação de entrada, tratamento consistente de erros, consultas com filtro/ordenação/paginação e uma suíte de testes automatizados confiável.
+## O que a API oferece
 
-O objetivo técnico principal não é "fazer CRUD funcionar", mas sim decidir **onde cada responsabilidade vive** (entidade, camada de aplicação, contrato HTTP), como o domínio protege suas próprias invariantes e como a API se comporta de forma previsível diante de entrada inválida, recurso inexistente e volume de dados.
+- Cadastro e consulta paginada de usuários, projetos, tarefas e etiquetas.
+- Associação de tarefas a projetos, responsáveis e etiquetas.
+- Pesquisa textual em entidades compatíveis com busca no PostgreSQL.
+- Paginação, ordenação e limite de 100 itens por página.
+- Ciclo de vida explícito das tarefas: `PENDING` → `RUNNING` → `COMPLETED` ou `CANCELED`.
+- Arquivamento de tarefas, sem exibi-las nas listagens padrão.
+- Consulta de tarefas atrasadas e resumo de tarefas por status.
+- Validação de entrada e respostas de erro padronizadas.
+- Documentação interativa da API com OpenAPI e Swagger UI.
 
-## Contexto
+Uma tarefa concluída ou cancelada não pode ser editada; uma tarefa arquivada não pode ser alterada nem excluída. A exclusão de um usuário com tarefas atribuídas é bloqueada para evitar tarefas órfãs.
 
-A **Órbita**, uma consultoria de 40 pessoas, controla o trabalho dos times em planilhas compartilhadas. O modelo colapsou: duas pessoas editam a mesma linha e uma sobrescreve a outra, ninguém sabe quem fechou o quê, não existe histórico de datas, e a diretoria não consegue responder perguntas simples como "quantas tarefas estão atrasadas por time?".
+## Tecnologias e conceitos
 
-A decisão foi construir um serviço interno próprio. O time de frontend já tem o app web em andamento e vai consumir a API — o que significa que **o contrato HTTP é um produto**, não um detalhe: precisa de respostas de erro legíveis por máquina, listagens paginadas (a planilha atual já tem 12 mil linhas migradas) e filtros que permitam montar as telas de "minhas tarefas", "atrasadas" e "por projeto" sem que o cliente baixe a base inteira.
+- Java 17 e Spring Boot
+- Spring MVC, Spring Data JPA e Hibernate
+- PostgreSQL e Docker Compose
+- Liquibase para versionar e aplicar migrações
+- Bean Validation para validar dados de entrada
+- DTOs para separar os contratos HTTP das entidades persistidas
+- Testes unitários e web com JUnit, Mockito e MockMvc
+- Testes de integração com H2 e PostgreSQL via Testcontainers
+- springdoc OpenAPI / Swagger UI
 
-Ainda não há autenticação nesta fase — a API vai rodar atrás da VPN da empresa, e o serviço de identidade será construído depois. O usuário responsável é informado explicitamente nas requisições.
+## Como executar
 
-## Problema
+### Pré-requisitos
 
-O sistema precisa registrar tarefas pertencentes a usuários, expor consultas eficientes sobre uma base que cresce, e garantir que o ciclo de vida de uma tarefa seja respeitado — uma tarefa concluída não volta a ser editada por acidente, uma tarefa cancelada não é concluída, e uma tarefa não é atribuída a alguém que não existe mais na empresa.
+- JDK 17
+- Docker com Docker Compose
 
-As principais dificuldades esperadas:
+O Maven Wrapper está incluído no repositório; não é necessário instalar Maven separadamente. Na primeira execução, o Docker pode precisar baixar as imagens e o Maven pode baixar as dependências.
 
-- **Separação entre modelo persistente e contrato de API.** Expor a entidade diretamente na resposta parece funcionar até a primeira mudança de banco ou o primeiro ciclo infinito de serialização. É preciso decidir como representar entrada e saída, e como converter entre elas.
-- **Ciclo de vida como regra, não como campo livre.** O status não é uma string qualquer: existem transições legítimas e ilegítimas, e a API deve recusar as ilegítimas com uma resposta clara.
-- **Consultas com muitas combinações de filtro.** Filtrar por responsável, status, prioridade, faixa de vencimento e etiqueta — em qualquer combinação — sem cair em um emaranhado de `if`s montando SQL na mão. Spring Data oferece mais de um caminho para isso; escolher é parte do desafio.
-- **Erros previsíveis.** Entrada inválida, recurso inexistente, transição proibida e conflito precisam produzir respostas distinguíveis e estáveis, com o mesmo formato de corpo em toda a API.
-- **Desempenho de leitura.** Listar tarefas com suas etiquetas e responsável é onde o problema de N+1 consultas aparece pela primeira vez. Detectá-lo exige observar o SQL efetivamente emitido, não apenas confiar que "está funcionando".
+### Iniciar a aplicação e o banco
 
-## Escopo
+Na raiz do projeto:
 
-O sistema precisa suportar:
-
-- gerenciamento de usuários (cadastro, atualização, desativação, consulta)
-- criação, atualização e consulta de tarefas
-- atribuição e reatribuição de tarefa a um usuário
-- alteração de status de tarefa através de operação explícita
-- arquivamento de tarefas (remoção não deve destruir histórico)
-- organização de tarefas em projetos
-- etiquetas (labels) livres associáveis a tarefas
-- listagem de tarefas com filtros combináveis: responsável, projeto, status, prioridade, etiqueta, janela de data de vencimento, atrasadas
-- ordenação configurável e paginação em todas as listagens de coleção
-- consulta de resumo/contagem por status para alimentar dashboards
-- documentação da API acessível
-
-## Entidades e conceitos
-
-```text
-User
-- identificador
-- nome
-- e-mail (único)
-- situação (ativo / inativo)
-- datas de criação e atualização
-
-Project
-- identificador
-- nome
-- descrição
-- responsável
-- situação
-
-Task
-- identificador
-- título
-- descrição
-- projeto ao qual pertence
-- usuário responsável
-- status
-- prioridade
-- data de vencimento
-- data de conclusão
-- indicador de arquivamento
-- etiquetas associadas
-- datas de criação e atualização
-
-Label
-- identificador
-- nome (único)
-- cor
+```bash
+docker compose up --build
 ```
 
-Não está definido aqui se etiqueta é entidade própria ou coleção de valores, se projeto é obrigatório, ou como o status é persistido. Essas decisões de modelagem são suas.
+O Compose inicia o PostgreSQL, espera que esteja pronto e então inicia a aplicação. O Liquibase aplica as migrações; o Hibernate valida o schema, sem gerá-lo automaticamente.
 
-## Regras de negócio
+- API: `http://localhost:8081/api`
+- Swagger UI: `http://localhost:8081/api/swagger-ui.html`
+- Especificação OpenAPI: `http://localhost:8081/api/v3/api-docs`
+- Health check: `http://localhost:8081/api/health-check`
 
-1. Toda tarefa precisa de título; título vazio ou apenas espaços é inválido.
-2. Título tem tamanho máximo definido e a violação deve ser rejeitada pela API, não pelo banco.
-3. A data de vencimento, quando informada na criação, não pode estar no passado; a validação identifica `due_date` no formato padrão de erro.
-4. Uma tarefa só pode ser atribuída a um usuário existente e **ativo**.
-5. O status segue um ciclo de vida: uma tarefa nasce pendente, pode ir para em andamento, e de lá para concluída ou cancelada. Qualquer transição fora do que for definido como legítimo deve ser recusada — inclusive reabrir uma tarefa concluída ou concluir uma cancelada. A API aceita a mudança por `PATCH /tasks/{id}/status`.
-6. Ao ser concluída, a tarefa registra a data de conclusão automaticamente; essa data nunca é informada pelo cliente.
-7. Uma tarefa concluída ou cancelada não aceita alteração de conteúdo nem etiquetas.
-8. Uma tarefa arquivada não aparece nas listagens padrão, não pode ser alterada nem excluída. O arquivamento é feito por `POST /tasks/{id}/archive`.
-9. A exclusão de usuário com tarefas atribuídas é bloqueada com conflito (`409`); as tarefas permanecem associadas ao usuário.
-10. Uma tarefa é considerada atrasada quando sua data/hora de vencimento já passou e não está concluída, cancelada ou arquivada. O campo `overdue` nas respostas indica essa condição; filtre com `GET /tasks?overdue=true`, combinável com `search`, paginação e ordenação.
-11. E-mail de usuário é único no sistema, e a tentativa de duplicar deve retornar conflito — não erro genérico de servidor.
-12. Nenhuma listagem de coleção pode retornar a base inteira: paginação é obrigatória, com limite máximo de itens por página imposto pelo servidor.
+Para encerrar, use `Ctrl+C` e, se necessário, execute `docker compose down`. Os dados do banco ficam no volume `pgdata` e são preservados entre execuções.
 
-## Requisitos técnicos
+As credenciais definidas no Compose são apenas para desenvolvimento local; não devem ser usadas em um ambiente publicado.
 
-- Java (versão LTS atual) e Spring Boot
-- REST API
-- Spring Web
-- Spring Data JPA / Hibernate
-- PostgreSQL executando via Docker / Docker Compose
-- Migrations versionadas de schema (Flyway ou Liquibase — escolha e justifique)
-- Bean Validation nos contratos de entrada
-- DTOs distintos para entrada e saída; a entidade não é o contrato
-- Tratamento centralizado de exceções com formato de erro único em toda a API
-- Paginação e ordenação suportadas pela camada de dados
-- Enums persistidos de forma segura a refatoração
-- Testes unitários de regra de negócio
-- Testes de camada web (requisição/resposta, códigos de status, payloads de erro)
-- Testes de repositório/integração com banco real (Testcontainers é o caminho recomendado)
-- Documentação da API gerada (OpenAPI/Swagger)
-- Perfis de configuração separados para desenvolvimento e teste
-- Logging estruturado mínimo
+### Executar os testes
 
-O resumo `GET /tasks/summary/status` retorna contagem por status para tarefas não arquivadas, incluindo status com contagem zero. Os perfis padrão são `dev` e `test`; `application-dev.properties` usa o banco de desenvolvimento configurado em `application.properties`, enquanto `application-test.properties` configura H2 e desativa Liquibase.
+Em outro terminal, na raiz do projeto:
 
-### OpenAPI / Swagger UI
-
-Com a aplicação em execução, a especificação OpenAPI está disponível em `/api/v3/api-docs` e a interface interativa Swagger UI em `/api/swagger-ui.html`.
-
-### Formato de erro da API
-
-Todas as respostas de erro usam o mesmo corpo: `status` contém o status HTTP, `message` descreve a falha e `errors` é sempre uma lista. Para erros de domínio ou HTTP sem campos inválidos, `errors` fica vazia:
-
-```json
-{
-  "status": "404 NOT_FOUND",
-  "message": "Task not found",
-  "errors": []
-}
+```bash
+./mvnw test
 ```
 
-Erros de validação retornam `400 BAD_REQUEST` e identificam cada campo inválido:
+A suíte cobre regras de domínio, serviços, controllers e integração com persistência. Os testes PostgreSQL usam Testcontainers e precisam de Docker; os testes de aplicação em perfil `test` usam H2. O perfil `dev` é o padrão da aplicação e usa PostgreSQL com Liquibase.
+
+## Rotas principais
+
+Todas as rotas usam o prefixo `/api`.
+
+| Recurso | Rotas |
+| --- | --- |
+| Health check | `GET /health-check` |
+| Usuários | `/users` — `GET`, `POST`; `GET`, `PATCH`, `DELETE /users/{id}`; `POST /users/{id}/status` |
+| Projetos | `/projects` — `GET`, `POST`; operações de consulta, atualização, status e membros em `/projects/{id}` |
+| Tarefas | `/tasks` — `GET`, `POST`; `GET`, `PATCH`, `DELETE /tasks/{id}` |
+| Ciclo de vida | `PATCH /tasks/{id}/status`; `POST /tasks/{id}/archive` |
+| Resumo e atraso | `GET /tasks/summary/status`; `GET /tasks?overdue=true` |
+| Etiquetas | `/labels` — `GET`, `POST`; `GET`, `PATCH`, `DELETE /labels/{id}` |
+
+Os parâmetros de paginação e ordenação seguem o padrão Spring Data, por exemplo `?page=0&size=20&sort=title,asc`. O servidor limita páginas a 100 itens.
+
+### Contrato de erro
+
+Erros usam um corpo consistente com `status`, `message` e `errors`. Erros de validação identificam o campo inválido:
 
 ```json
 {
@@ -151,40 +101,29 @@ Erros de validação retornam `400 BAD_REQUEST` e identificam cada campo inváli
 }
 ```
 
-## Desafios técnicos
+## Desafios técnicos que enfrentei
 
-- **Modelagem de domínio versus modelagem de tabela**: decidir o que é entidade, o que é valor, e o que é apenas coluna.
-- **Ciclo de vida e invariantes**: garantir que uma transição inválida seja impossível, não apenas improvável.
-- **Consultas dinâmicas**: escolher entre query methods, `@Query`, Specifications ou Querydsl, entendendo o custo de cada opção.
-- **Problema de N+1**: identificar e resolver ao carregar tarefas com relacionamentos.
-- **Contrato de erro**: padronizar respostas de falha e mapear exceções de domínio para códigos HTTP adequados.
-- **Tempo e fuso**: datas de vencimento e "atrasado" dependem de decisões sobre tipo temporal e fuso horário.
-- **Testabilidade**: escrever testes que quebrem quando a regra quebrar, e não quando o código for refatorado.
+Este projeto foi também uma forma de aprender a investigar problemas reais, em vez de apenas fazer os endpoints responderem:
 
-## Critérios de conclusão
+- **Tipos retornados por consultas nativas:** encontrei um `ClassCastException` ao tratar IDs vindos do PostgreSQL como `Integer`, quando podiam ser `Long`. Passei a receber os IDs como `Number` e fazer a conversão explícita com `Math.toIntExact`.
+- **Paginação e problema de N+1:** carregar relações diretamente em uma consulta paginada podia multiplicar linhas ou gerar consultas por tarefa. A listagem passou a buscar primeiro uma página de IDs e, em seguida, carregar as relações dos itens da página em uma consulta. Um teste com estatísticas do Hibernate compara páginas de tamanhos diferentes e verifica que a quantidade de consultas permanece constante.
+- **Regras do ciclo de vida:** protegi as transições de status e as alterações de tarefas concluídas, canceladas ou arquivadas no domínio, evitando depender apenas do comportamento dos controllers.
+- **Respostas de erro:** reuni erros de validação, ausência de recursos e conflitos em um formato único, com códigos HTTP adequados e nomes de campo quando aplicável.
+- **Integridade das relações:** a exclusão de usuários com tarefas atribuídas é recusada para evitar referências órfãs.
+- **Datas e atrasos:** implementei a rejeição de vencimento passado na criação e a regra de atraso que exclui tarefas concluídas, canceladas ou arquivadas.
+- **Testes e contexto Spring:** aprendi que testes de repositório com recorte JPA não carregam automaticamente todos os serviços da aplicação. Ajustei as dependências necessárias no teste PostgreSQL e corrigi um fixture de teste que tentava excluir uma etiqueta sem configurar seu ID.
+- **Configuração por ambiente:** separei os perfis de desenvolvimento e teste, usando PostgreSQL e Liquibase em desenvolvimento e H2 nos testes de aplicação.
 
-O desafio está concluído quando:
+Essas dificuldades me ajudaram a praticar leitura de stack traces, depuração de integração entre camadas e criação de testes que verificam comportamento, não apenas implementação.
 
-- A aplicação sobe com um único comando de composição (aplicação + banco) e o schema é criado por migrations, sem geração automática de DDL em produção.
-- Todas as regras de negócio listadas são verificáveis por chamadas HTTP: cada violação produz o código de status correto e um corpo de erro no formato padrão, incluindo qual campo falhou quando for validação.
-- Tentar uma transição de status ilegítima falha de forma explícita e não altera o estado armazenado.
-- Listagens retornam dados paginados com metadados de página, respeitam ordenação solicitada, impõem limite máximo de 100 itens por página (pedidos maiores são limitados a 100) e aceitam filtros combinados.
-- A listagem de tarefas com responsável e etiquetas é servida com número de consultas SQL constante relativamente à quantidade de itens retornados — e você consegue demonstrar isso.
-- Existe cobertura de testes automatizados que exercita as regras de negócio e os principais fluxos HTTP, e a suíte roda de ponta a ponta sem depender de banco instalado manualmente na máquina.
-- A documentação da API está acessível e reflete os contratos reais.
+## Decisões e limites conhecidos
 
-## Extensões opcionais
+- A API ainda não implementa autenticação ou autorização; o foco desta etapa foi aprender a estrutura de uma API Spring e suas regras de domínio.
+- O vencimento é representado como instante (`Instant`), e a aplicação usa UTC para persistência.
+- O PostgreSQL é necessário para as consultas de busca textual específicas do banco e para executar os testes Testcontainers.
 
-- Subtarefas e dependência entre tarefas (uma tarefa não conclui antes das dependências).
-- Comentários em tarefas, com paginação própria.
-- Histórico de alterações da tarefa (quem mudou o quê e quando), usando auditoria da própria stack de persistência.
-- Tarefas recorrentes com geração automática da próxima ocorrência.
-- Busca textual em título e descrição usando os recursos de busca do PostgreSQL.
-- Exportação de listagem filtrada em CSV com streaming, sem carregar tudo em memória.
-- Paginação por cursor (keyset) para as listagens grandes, comparando com a paginação por offset.
-- Cache de respostas de leitura com validação condicional (ETag / If-None-Match).
-- Notificação de tarefas próximas do vencimento via tarefa agendada.
+## Documentação adicional
 
-## Documentação
-
-- [Migrações do banco (Liquibase)](docs/migrations.md): como gerar, aplicar e reverter migrações.
+- [Migrações do banco com Liquibase](docs/migrations.md)
+- [Swagger UI](http://localhost:8081/api/swagger-ui.html), após iniciar a aplicação
+- [Especificação OpenAPI](http://localhost:8081/api/v3/api-docs), após iniciar a aplicação
