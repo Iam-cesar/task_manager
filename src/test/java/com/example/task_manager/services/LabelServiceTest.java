@@ -162,6 +162,7 @@ class LabelServiceTest {
     @Test
     void deletesExistingLabel() {
         var label = new LabelModel(new CreateLabelDto("Old", "#111111"));
+        ReflectionTestUtils.setField(label, "id", 7);
         when(labelRepository.findByIdWithTasks(7)).thenReturn(Optional.of(label));
 
         labelService.deleteById(7);
