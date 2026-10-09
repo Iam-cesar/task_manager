@@ -2,6 +2,7 @@ package com.example.task_manager.repositories;
 
 import com.example.task_manager.enums.TaskPriorityEnum;
 import com.example.task_manager.dtos.input.CreateLabelDto;
+import com.example.task_manager.dtos.input.CreateTaskDto;
 import com.example.task_manager.models.LabelModel;
 import com.example.task_manager.models.ProjectModel;
 import com.example.task_manager.models.TaskModel;
@@ -9,6 +10,7 @@ import com.example.task_manager.models.UserModel;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
@@ -17,25 +19,31 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageRequest;
+import org.hibernate.SessionFactory;
+import org.hibernate.stat.Statistics;
 import com.example.task_manager.services.ProjectService;
 import com.example.task_manager.services.LabelService;
 import com.example.task_manager.services.TaskService;
+import com.example.task_manager.services.UserService;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest(properties = {
     "spring.jpa.hibernate.ddl-auto=create-drop",
-    "spring.liquibase.enabled=false"
+    "spring.liquibase.enabled=false",
+    "spring.jpa.properties.hibernate.generate_statistics=true"
 })
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Testcontainers(disabledWithoutDocker = true)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
-@Import({ProjectService.class, LabelService.class, TaskService.class})
+@Import({ProjectService.class, LabelService.class, TaskService.class, UserService.class})
 class FullTextSearchRepositoryTest {
 
     @Container
@@ -65,6 +73,9 @@ class FullTextSearchRepositoryTest {
     private TaskRepository taskRepository;
 
     @Autowired
+    private EntityManagerFactory entityManagerFactory;
+
+    @Autowired
     private TaskService taskService;
 
     @Autowired
@@ -76,6 +87,7 @@ class FullTextSearchRepositoryTest {
     private UserModel user;
     private ProjectModel project;
     private TaskModel task;
+    private LabelModel label;
 
     @BeforeEach
     void createSearchFixtures() {
@@ -98,7 +110,7 @@ class FullTextSearchRepositoryTest {
         task.setPriority(TaskPriorityEnum.HIGH);
         task = taskRepository.saveAndFlush(task);
 
-        labelRepository.saveAndFlush(
+        label = labelRepository.saveAndFlush(
             new LabelModel(new CreateLabelDto("Yellow urgent", "#FFFF00"))
         );
     }
@@ -164,6 +176,51 @@ class FullTextSearchRepositoryTest {
         assertThat(persistenceUnitUtil.isLoaded(result.getProject(), "project_owner")).isTrue();
         assertThat(result.getProject().getProject_owner().getName()).isEqualTo("Ada Lovelace");
         assertThat(result.getUser().getEmail()).isEqualTo("ada@example.com");
+    }
+
+    @Test
+    void loadsTaskPagesWithAConstantNumberOfQueries() {
+        var additionalTasks = IntStream.rangeClosed(1, 4)
+            .mapToObj(index -> new TaskModel(
+                new CreateTaskDto(
+                    "Additional task " + index,
+                    "Task for query count verification",
+                    project.getId(),
+                    user.getId(),
+                    null
+                ),
+                project,
+                user,
+                Set.of(label)
+            ))
+            .toList();
+        taskRepository.saveAllAndFlush(additionalTasks);
+        entityManager.flush();
+        entityManager.clear();
+
+        Statistics statistics = entityManagerFactory.unwrap(SessionFactory.class).getStatistics();
+
+        statistics.clear();
+        var singleTaskPage = taskService.findAll(null, PageRequest.of(0, 1));
+        singleTaskPage.getContent().forEach(this::readTaskRelations);
+        long singleTaskQueryCount = statistics.getPrepareStatementCount();
+
+        entityManager.clear();
+        statistics.clear();
+        var fullTaskPage = taskService.findAll(null, PageRequest.of(0, 5));
+        fullTaskPage.getContent().forEach(this::readTaskRelations);
+        long fullPageQueryCount = statistics.getPrepareStatementCount();
+
+        assertThat(singleTaskPage).hasSize(1);
+        assertThat(fullTaskPage).hasSize(5);
+        assertThat(fullPageQueryCount).isEqualTo(singleTaskQueryCount);
+        assertThat(fullPageQueryCount).isEqualTo(3);
+    }
+
+    private void readTaskRelations(TaskModel task) {
+        assertThat(task.getUser().getName()).isNotBlank();
+        assertThat(task.getProject().getProject_owner().getName()).isNotBlank();
+        task.getLabels().forEach(label -> assertThat(label.getName()).isNotBlank());
     }
 
     @Test
