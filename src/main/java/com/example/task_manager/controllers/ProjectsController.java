@@ -4,8 +4,11 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 import java.net.URI;
-import java.util.List;
 
+import com.example.task_manager.helpers.ConvertRepresentationModel;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PagedModel;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -14,8 +17,6 @@ import com.example.task_manager.dtos.input.CreateProjectDto;
 import com.example.task_manager.dtos.input.MemberIdsDto;
 import com.example.task_manager.dtos.input.UpdateProjectDto;
 import com.example.task_manager.dtos.output.ProjectResponseDto;
-import com.example.task_manager.helpers.ConvertRepresentationModel;
-import com.example.task_manager.models.ProjectModel;
 import com.example.task_manager.services.ProjectService;
 
 import jakarta.validation.Valid;
@@ -77,26 +78,29 @@ public class ProjectsController {
         final var project = new ProjectResponseDto(projectService.findById(id));
 
         project.add(linkTo(methodOn(ProjectsController.class)
-			.getAllProjects(null)).withRel("projects"));
+			.getAllProjects(null, null)).withRel("projects"));
 
         return ResponseEntity.ok(project);
     }
 
     @GetMapping
-    public ResponseEntity<List<ProjectResponseDto>> getAllProjects(
-        @RequestParam(required = false) String search
+    public ResponseEntity<PagedModel<ProjectResponseDto>> getAllProjects(
+	    @RequestParam(required = false) String search,
+	    @PageableDefault(size = 10) final Pageable pageable
     ) {
-        final var projects = ConvertRepresentationModel
-	        .toList(projectService.findAll(search), ProjectResponseDto::new);
+        final var projects = ConvertRepresentationModel.toPageList(
+            projectService.findAll(search, pageable),
+            ProjectResponseDto::new
+        );
 
-        if  (!projects.isEmpty()) {
-            for (ProjectResponseDto project : projects) {
+        if (!projects.isEmpty()) {
+            for (ProjectResponseDto project : projects.getContent()) {
                 int id  = project.getId();
                 project.add(linkTo(methodOn(ProjectsController.class).getProjectById(id)).withSelfRel());
             }
         }
 
-        return ResponseEntity.ok(projects);
+        return ResponseEntity.ok(new PagedModel<>(projects));
     }
 
     @PatchMapping("/{id}")

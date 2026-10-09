@@ -1,8 +1,14 @@
 package com.example.task_manager.services;
 
 import java.util.List;
+import java.util.Objects;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.jspecify.annotations.NonNull;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -117,16 +123,30 @@ public class ProjectService {
 		return projectRepository.findAllWithRelationsByIdIn(projectIds);
 	}
 
-    public List<ProjectModel> findAllWithRelations() {
-        return projectRepository.findAllWithRelations();
-    }
+	@Transactional(readOnly = true)
+	public Page<ProjectModel> findAll(
+		final String aSearch,
+		final Pageable pageable
+	) {
+		final var idsPage = aSearch == null || aSearch.isBlank()
+			? projectRepository.findAllIds(pageable)
+			: projectRepository.searchIdsByNameAndDescription(aSearch, pageable);
 
-    public List<ProjectModel> findAll(final String aSearch) {
+		if (idsPage.isEmpty()) {
+			return new PageImpl<>(List.of(), pageable, idsPage.getTotalElements());
+		}
 
-	    return  aSearch == null || aSearch.isBlank()
-		    ? findAllWithRelations()
-		    : searchByNameAndDescription(aSearch);
-    }
+		var projectsById = projectRepository.findAllWithRelationsByIdIn(idsPage.getContent())
+			.stream()
+			.collect(Collectors.toMap(ProjectModel::getId, Function.identity()));
+
+		var projectsInPageOrder = idsPage.getContent().stream()
+			.map(projectsById::get)
+			.filter(Objects::nonNull)
+			.toList();
+
+		return new PageImpl<>(projectsInPageOrder, pageable, idsPage.getTotalElements());
+	}
 
 	@Transactional
     public ProjectModel updateAndFlush(

@@ -9,6 +9,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -19,6 +20,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.example.task_manager.dtos.input.CreateProjectDto;
@@ -54,6 +57,65 @@ class ProjectServiceTest {
         ReflectionTestUtils.setField(mockOwner, "id", 1);
         mockOwner.setName("Owner User");
         mockOwner.setEmail("owner@example.com");
+    }
+
+    @Nested
+    @DisplayName("findAll")
+    class FindAllTests {
+
+        @Test
+        @DisplayName("Should return a page with relations in the same order as the paged IDs")
+        void shouldReturnPageOfProjectsInIdPageOrder() {
+            var pageable = PageRequest.of(1, 2);
+            var first = new ProjectModel(new CreateProjectDto("Alpha", "Description", 1));
+            var second = new ProjectModel(new CreateProjectDto("Beta", "Description", 1));
+            ReflectionTestUtils.setField(first, "id", 10);
+            ReflectionTestUtils.setField(second, "id", 20);
+            var idsPage = new PageImpl<>(List.of(10, 20), pageable, 5);
+            when(projectRepository.findAllIds(pageable)).thenReturn(idsPage);
+            when(projectRepository.findAllWithRelationsByIdIn(List.of(10, 20)))
+                .thenReturn(List.of(second, first));
+
+            var result = projectService.findAll(null, pageable);
+
+            assertEquals(List.of(first, second), result.getContent());
+            assertEquals(5, result.getTotalElements());
+            assertEquals(3, result.getTotalPages());
+            verify(projectRepository).findAllIds(pageable);
+            verify(projectRepository).findAllWithRelationsByIdIn(List.of(10, 20));
+        }
+
+        @Test
+        @DisplayName("Should use the paged full-text search when a search term is supplied")
+        void shouldReturnPageOfSearchResults() {
+            var pageable = PageRequest.of(0, 2);
+            var project = new ProjectModel(new CreateProjectDto("Blue roadmap", "Release plan", 1));
+            ReflectionTestUtils.setField(project, "id", 7);
+            when(projectRepository.searchIdsByNameAndDescription("blue release", pageable))
+                .thenReturn(new PageImpl<>(List.of(7), pageable, 1));
+            when(projectRepository.findAllWithRelationsByIdIn(List.of(7)))
+                .thenReturn(List.of(project));
+
+            var result = projectService.findAll("blue release", pageable);
+
+            assertEquals(List.of(project), result.getContent());
+            assertEquals(1, result.getTotalElements());
+            verify(projectRepository).searchIdsByNameAndDescription("blue release", pageable);
+        }
+
+        @Test
+        @DisplayName("Should not fetch project relations when the requested page has no IDs")
+        void shouldReturnEmptyPageWithoutFetchingRelations() {
+            var pageable = PageRequest.of(3, 2);
+            when(projectRepository.findAllIds(pageable))
+                .thenReturn(new PageImpl<>(List.of(), pageable, 5));
+
+            var result = projectService.findAll(" ", pageable);
+
+            assertEquals(List.of(), result.getContent());
+            assertEquals(5, result.getTotalElements());
+            verify(projectRepository, never()).findAllWithRelationsByIdIn(any());
+        }
     }
 
     @Nested
