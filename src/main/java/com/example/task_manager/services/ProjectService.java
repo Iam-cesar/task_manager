@@ -115,7 +115,8 @@ public class ProjectService {
     }
 
 	public List<ProjectModel> searchByNameAndDescription(@NonNull final String aName) {
-		List<Number> projectIds = projectRepository.searchIdsByNameAndDescription(aName);
+		final var projectIds = projectRepository.searchIdsByNameAndDescription(aName);
+
 		if (projectIds.isEmpty()) {
 			return List.of();
 		}

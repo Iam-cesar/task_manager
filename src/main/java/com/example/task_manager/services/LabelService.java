@@ -40,7 +40,7 @@ public class LabelService {
 	}
 
 	public Page<LabelModel> findAll(final String search, final Pageable pageable) {
-		final Page<Number> idsPage = search == null || search.isBlank()
+		final var idsPage = search == null || search.isBlank()
 			? labelRepository.findAllIds(pageable)
 			: labelRepository.searchIdsByName(search, pageable);
 
@@ -63,7 +63,7 @@ public class LabelService {
 
 	public List<LabelModel> findByName(@NonNull final String aName) {
 
-		List<Integer> labelIds = labelRepository.searchIdsByName(aName).stream()
+		final var labelIds = labelRepository.searchIdsByName(aName).stream()
 			.map(id -> Math.toIntExact(id.longValue()))
 			.toList();
 
@@ -92,7 +92,7 @@ public class LabelService {
 	}
 
 	public void deleteById(final int anId) {
-		var label = findById(anId);
+		final var label = findById(anId);
 
 		if (label != null) {
 			labelRepository.deleteById(label.getId());

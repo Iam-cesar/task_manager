@@ -45,10 +45,11 @@ public class TaskService {
 			throw new TaskDueDateInPastException();
 		}
 
-		var user = userService.findById(aDto.user_id());
-		var project = projectService.findById(aDto.project_id());
-		var requestedLabelIds = aDto.label_ids() == null ? List.<Integer>of() : aDto.label_ids();
-		var labels = new HashSet<>(labelRepository.findAllById(requestedLabelIds));
+		final var user = userService.findById(aDto.user_id());
+		final var project = projectService.findById(aDto.project_id());
+		final var requestedLabelIds = aDto.label_ids() == null ? List.<Integer>of() : aDto.label_ids();
+		final var labels = new HashSet<>(labelRepository.findAllById(requestedLabelIds));
+
 		if (labels.size() != new HashSet<>(requestedLabelIds).size()) {
 			throw new LabelNotFoundException();
 		}
@@ -73,8 +74,11 @@ public class TaskService {
 
 	@Transactional(readOnly = true)
 	public Page<TaskModel> findAll(final String search, boolean overdue, Pageable pageable) {
+
 		boolean hasSearch = search != null && !search.isBlank();
+
 		Page<Number> idsPage;
+
 		if (overdue) {
 			idsPage = hasSearch
 				? taskRepository.searchOverdueIdsByTitleAndDescription(search, pageable)
@@ -86,7 +90,6 @@ public class TaskService {
 		}
 
 		var integerIdsPage = idsPage.map(id -> Math.toIntExact(id.longValue()));
-
 
 		if (integerIdsPage.isEmpty()) {
 			return new PageImpl<>(List.of(), pageable, integerIdsPage.getTotalElements());
@@ -130,7 +133,7 @@ public class TaskService {
 
 	@Transactional(readOnly = true)
 	public List<TaskStatusCountDto> summarizeByStatus() {
-		Map<TaskStatusEnum, Long> counts = new EnumMap<>(TaskStatusEnum.class);
+		final var counts = new EnumMap<>(TaskStatusEnum.class);
 
 		for (TaskStatusEnum status : TaskStatusEnum.values()) {
 			counts.put(status, 0L);
@@ -141,18 +144,20 @@ public class TaskService {
 		}
 
 		return counts.entrySet().stream()
-			.map(entry -> new TaskStatusCountDto(entry.getKey(), entry.getValue()))
+			.map(entry -> new TaskStatusCountDto(entry.getKey(), (Long) entry.getValue()))
 			.toList();
 	}
 
 	@Transactional
 	public TaskModel addLabels(@NonNull LabelIdsDto aDto, Integer anTargetId)  {
-		var targetTask = findById(anTargetId);
+		final var targetTask = findById(anTargetId);
+
 		targetTask.ensureEditable();
-		var aListOfLabels = new HashSet<>(labelRepository.findAllById(aDto.label_ids()));
+
+		final var aListOfLabels = new HashSet<>(labelRepository.findAllById(aDto.label_ids()));
 
 		for (LabelModel label : aListOfLabels) {
-			var taskContainsThisLabel = targetTask.getLabels().contains(label);
+			final var taskContainsThisLabel = targetTask.getLabels().contains(label);
 
 			if (!taskContainsThisLabel) targetTask.addLabel(label);
 		}
@@ -162,13 +167,15 @@ public class TaskService {
 
 	@Transactional
 	public TaskModel removeLabels(@NonNull LabelIdsDto aDto, Integer anTargetId)  {
-		var targetTask = findById(anTargetId);
+		final var targetTask = findById(anTargetId);
+
 		targetTask.ensureEditable();
-		var aListOfLabels = new HashSet<>(labelRepository.findAllById(aDto.label_ids()));
+
+		final var aListOfLabels = new HashSet<>(labelRepository.findAllById(aDto.label_ids()));
 
 		for (LabelModel label : aListOfLabels) {
 
-			var taskContainsThisLabel = targetTask.getLabels().contains(label);
+			final var taskContainsThisLabel = targetTask.getLabels().contains(label);
 
 			if (taskContainsThisLabel) targetTask.removeLabel(label);
 		}
@@ -179,7 +186,7 @@ public class TaskService {
 
 	public void delete(final int anId) {
 
-		var task = findById(anId);
+		final var task = findById(anId);
 		task.ensureEditable();
 		taskRepository.deleteById(task.getId());
 	}
