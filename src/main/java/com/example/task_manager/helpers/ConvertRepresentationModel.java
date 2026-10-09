@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.function.Function;
 
 import lombok.NonNull;
+import org.springframework.data.domain.Page;
 import org.springframework.hateoas.RepresentationModel;
 
 public final class ConvertRepresentationModel {
@@ -16,4 +17,11 @@ public final class ConvertRepresentationModel {
             .map(representationFactory)
             .toList();
     }
+
+	public static <M, R extends RepresentationModel<R>> @NonNull Page<R> toPageList(
+		@NonNull final Page<M> models,
+		@NonNull final Function<M, R> representationFactory
+	) {
+		return models.map(representationFactory);
+	}
 }

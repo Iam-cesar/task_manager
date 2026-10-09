@@ -14,6 +14,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
@@ -99,21 +101,29 @@ class TaskServiceTest {
 
     @Test
     void returnsAllTasksWithRelationsWhenSearchIsBlank() {
-        var tasks = List.of(new TaskModel());
-        when(taskRepository.findAllWithRelations()).thenReturn(tasks);
+        var pageable = PageRequest.of(0, 10);
+        var task = new TaskModel();
+        ReflectionTestUtils.setField(task, "id", 15);
+        when(taskRepository.findAllIds(pageable))
+            .thenReturn(new PageImpl<>(List.of(15), pageable, 1));
+        when(taskRepository.findAllWithRelationsByIdIn(List.of(15)))
+            .thenReturn(List.of(task));
 
-        assertEquals(tasks, taskService.findAll(" "));
-        verify(taskRepository).findAllWithRelations();
-        verify(taskRepository, never()).searchIdsByTitleAndDescription(any());
+        assertEquals(List.of(task), taskService.findAll(" ", pageable).getContent());
+        verify(taskRepository).findAllIds(pageable);
+        verify(taskRepository, never()).searchIdsByTitleAndDescription(any(), any());
     }
 
     @Test
     void returnsSearchResultsWithRelations() {
-        var tasks = List.of(new TaskModel());
-        when(taskRepository.searchIdsByTitleAndDescription("dishes")).thenReturn(List.of(15));
-        when(taskRepository.findAllWithRelationsByIdIn(List.of(15))).thenReturn(tasks);
+        var pageable = PageRequest.of(0, 10);
+        var task = new TaskModel();
+        ReflectionTestUtils.setField(task, "id", 15);
+        when(taskRepository.searchIdsByTitleAndDescription("dishes", pageable))
+            .thenReturn(new PageImpl<>(List.of(15), pageable, 1));
+        when(taskRepository.findAllWithRelationsByIdIn(List.of(15))).thenReturn(List.of(task));
 
-        assertEquals(tasks, taskService.findAll("dishes"));
+        assertEquals(List.of(task), taskService.findAll("dishes", pageable).getContent());
         verify(taskRepository).findAllWithRelationsByIdIn(List.of(15));
     }
 }

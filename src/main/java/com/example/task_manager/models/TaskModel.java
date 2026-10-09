@@ -20,6 +20,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.jspecify.annotations.NonNull;
 import org.springframework.beans.BeanUtils;
 
 @Getter
@@ -42,7 +43,7 @@ public class TaskModel extends BaseEntity {
 		CreateTaskDto aDto,
 		ProjectModel pm,
 		UserModel user,
-		Set<LabelModel> labels
+		@NonNull Set<LabelModel> labels
 	) {
 		BeanUtils.copyProperties(aDto, this);
 

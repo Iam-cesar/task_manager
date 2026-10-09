@@ -1,6 +1,7 @@
 package com.example.task_manager.repositories;
 
-import lombok.NonNull;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.example.task_manager.models.TaskModel;
@@ -20,8 +21,17 @@ public interface TaskRepository extends JpaRepository<TaskModel, Integer> {
 			coalesce(t.title, '') || ' ' || coalesce(t.description, '')
 		) @@ websearch_to_tsquery('simple', :search)
 		ORDER BY t.title ASC
-	""", nativeQuery = true)
-	List<Integer> searchIdsByTitleAndDescription(@Param("search") String aSearch);
+	""",
+		countQuery = """
+			SELECT COUNT(*)
+			FROM TB_TASKS t
+			WHERE to_tsvector(
+				'simple',
+				coalesce(t.title, '') || ' ' || coalesce(t.description, '')
+			) @@ websearch_to_tsquery('simple', :search)
+		""",
+		nativeQuery = true)
+	Page<Integer> searchIdsByTitleAndDescription(@Param("search") String aSearch, Pageable pageable);
 
 	@Query("""
 		SELECT DISTINCT t FROM TaskModel t
@@ -60,5 +70,9 @@ public interface TaskRepository extends JpaRepository<TaskModel, Integer> {
 	""")
 	List<TaskModel> findAllWithRelations();
 
-	TaskModel findByStatus(@NonNull final String aStatus);
+	@Query(
+		value = "SELECT t.id FROM TaskModel t ORDER BY t.title ASC, t.id ASC",
+		countQuery = "SELECT COUNT(t) FROM TaskModel t"
+	)
+	Page<Integer> findAllIds(Pageable pageable);
 }
