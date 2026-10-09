@@ -46,7 +46,7 @@ public interface ProjectRepository extends JpaRepository<ProjectModel, Integer> 
 		) @@ websearch_to_tsquery('simple', :name)
 		ORDER BY p.name ASC
 	""", nativeQuery = true)
-	List<Integer> searchIdsByNameAndDescription(@Param("name") String aName);
+	List<Number> searchIdsByNameAndDescription(@Param("name") String name);
 
 	@Query(
 		value = """
@@ -68,7 +68,7 @@ public interface ProjectRepository extends JpaRepository<ProjectModel, Integer> 
 		""",
 		nativeQuery = true
 	)
-	Page<Integer> searchIdsByNameAndDescription(
+	Page<Number> searchIdsByNameAndDescription(
 		@Param("name") String aName,
 		Pageable pageable
 	);
@@ -90,5 +90,5 @@ public interface ProjectRepository extends JpaRepository<ProjectModel, Integer> 
 	countQuery = """
 		SELECT COUNT(p) FROM ProjectModel p
 	""")
-	Page<Integer> findAllIds(Pageable pageable);
+	Page<Number> findAllIds(Pageable pageable);
 }

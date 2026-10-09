@@ -115,12 +115,14 @@ public class ProjectService {
     }
 
 	public List<ProjectModel> searchByNameAndDescription(@NonNull final String aName) {
-		List<Integer> projectIds = projectRepository.searchIdsByNameAndDescription(aName);
+		List<Number> projectIds = projectRepository.searchIdsByNameAndDescription(aName);
 		if (projectIds.isEmpty()) {
 			return List.of();
 		}
 
-		return projectRepository.findAllWithRelationsByIdIn(projectIds);
+		return projectRepository.findAllWithRelationsByIdIn(projectIds.stream()
+			.map(id -> Math.toIntExact(id.longValue()))
+			.toList());
 	}
 
 	@Transactional(readOnly = true)
@@ -128,24 +130,26 @@ public class ProjectService {
 		final String aSearch,
 		final Pageable pageable
 	) {
-		final var idsPage = aSearch == null || aSearch.isBlank()
+		final Page<Number> idsPage = aSearch == null || aSearch.isBlank()
 			? projectRepository.findAllIds(pageable)
 			: projectRepository.searchIdsByNameAndDescription(aSearch, pageable);
 
-		if (idsPage.isEmpty()) {
-			return new PageImpl<>(List.of(), pageable, idsPage.getTotalElements());
+		final var integerIdsPage = idsPage.map(id -> Math.toIntExact(id.longValue()));
+
+		if (integerIdsPage.isEmpty()) {
+			return new PageImpl<>(List.of(), pageable, integerIdsPage.getTotalElements());
 		}
 
-		var projectsById = projectRepository.findAllWithRelationsByIdIn(idsPage.getContent())
+		var projectsById = projectRepository.findAllWithRelationsByIdIn(integerIdsPage.getContent())
 			.stream()
 			.collect(Collectors.toMap(ProjectModel::getId, Function.identity()));
 
-		var projectsInPageOrder = idsPage.getContent().stream()
+		var projectsInPageOrder = integerIdsPage.getContent().stream()
 			.map(projectsById::get)
 			.filter(Objects::nonNull)
 			.toList();
 
-		return new PageImpl<>(projectsInPageOrder, pageable, idsPage.getTotalElements());
+		return new PageImpl<>(projectsInPageOrder, pageable, integerIdsPage.getTotalElements());
 	}
 
 	@Transactional

@@ -17,7 +17,7 @@ public interface LabelRepository extends JpaRepository<LabelModel, Integer> {
 		value = "SELECT l.id FROM LabelModel l ORDER BY l.name ASC, l.id ASC",
 		countQuery = "SELECT COUNT(l) FROM LabelModel l"
 	)
-	Page<Integer> findAllIds(Pageable pageable);
+	Page<Number> findAllIds(Pageable pageable);
 
 	@Query(
 		value = """
@@ -33,7 +33,7 @@ public interface LabelRepository extends JpaRepository<LabelModel, Integer> {
 		""",
 		nativeQuery = true
 	)
-	Page<Integer> searchIdsByName(@Param("name") String name, Pageable pageable);
+	Page<Number> searchIdsByName(@Param("name") String name, Pageable pageable);
 
 	@Query(value = """
 		SELECT l.id
@@ -41,7 +41,7 @@ public interface LabelRepository extends JpaRepository<LabelModel, Integer> {
 		WHERE to_tsvector('simple', l.name) @@ websearch_to_tsquery('simple', :name)
 		ORDER BY l.name ASC
 	""", nativeQuery = true)
-	List<Integer> searchIdsByName(@Param("name") String name);
+	List<Number> searchIdsByName(@Param("name") String name);
 
 	@Query("""
 		SELECT DISTINCT l FROM LabelModel l

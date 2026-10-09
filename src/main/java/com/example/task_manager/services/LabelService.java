@@ -40,28 +40,32 @@ public class LabelService {
 	}
 
 	public Page<LabelModel> findAll(final String search, final Pageable pageable) {
-		final var idsPage = search == null || search.isBlank()
+		final Page<Number> idsPage = search == null || search.isBlank()
 			? labelRepository.findAllIds(pageable)
 			: labelRepository.searchIdsByName(search, pageable);
 
-		if (idsPage.isEmpty()) {
-			return new PageImpl<>(List.of(), pageable, idsPage.getTotalElements());
+		final var integerIdsPage = idsPage.map(id -> Math.toIntExact(id.longValue()));
+
+		if (integerIdsPage.isEmpty()) {
+			return new PageImpl<>(List.of(), pageable, integerIdsPage.getTotalElements());
 		}
 
-		final var labelsById = labelRepository.findAllWithTasksByIdIn(idsPage.getContent())
+		final var labelsById = labelRepository.findAllWithTasksByIdIn(integerIdsPage.getContent())
 			.stream()
 			.collect(Collectors.toMap(LabelModel::getId, Function.identity()));
 
-		final var labelsInPageOrder = idsPage.getContent().stream()
+		final var labelsInPageOrder = integerIdsPage.getContent().stream()
 			.map(labelsById::get)
 			.toList();
 
-		return new PageImpl<>(labelsInPageOrder, pageable, idsPage.getTotalElements());
+		return new PageImpl<>(labelsInPageOrder, pageable, integerIdsPage.getTotalElements());
 	}
 
 	public List<LabelModel> findByName(@NonNull final String aName) {
 
-		List<Integer> labelIds = labelRepository.searchIdsByName(aName);
+		List<Integer> labelIds = labelRepository.searchIdsByName(aName).stream()
+			.map(id -> Math.toIntExact(id.longValue()))
+			.toList();
 
 		if (labelIds.isEmpty()) {
 			return List.of();

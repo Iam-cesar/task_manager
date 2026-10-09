@@ -20,6 +20,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -71,7 +72,7 @@ class ProjectServiceTest {
             var second = new ProjectModel(new CreateProjectDto("Beta", "Description", 1));
             ReflectionTestUtils.setField(first, "id", 10);
             ReflectionTestUtils.setField(second, "id", 20);
-            var idsPage = new PageImpl<>(List.of(10, 20), pageable, 5);
+            Page<Number> idsPage = new PageImpl<>(List.of(10, 20), pageable, 5);
             when(projectRepository.findAllIds(pageable)).thenReturn(idsPage);
             when(projectRepository.findAllWithRelationsByIdIn(List.of(10, 20)))
                 .thenReturn(List.of(second, first));
@@ -92,7 +93,7 @@ class ProjectServiceTest {
             var project = new ProjectModel(new CreateProjectDto("Blue roadmap", "Release plan", 1));
             ReflectionTestUtils.setField(project, "id", 7);
             when(projectRepository.searchIdsByNameAndDescription("blue release", pageable))
-                .thenReturn(new PageImpl<>(List.of(7), pageable, 1));
+                .thenReturn(new PageImpl<>(List.of(7L), pageable, 1));
             when(projectRepository.findAllWithRelationsByIdIn(List.of(7)))
                 .thenReturn(List.of(project));
 
