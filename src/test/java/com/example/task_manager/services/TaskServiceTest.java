@@ -2,6 +2,7 @@ package com.example.task_manager.services;
 
 import com.example.task_manager.dtos.input.CreateLabelDto;
 import com.example.task_manager.dtos.input.CreateTaskDto;
+import com.example.task_manager.exceptions.TaskDueDateInPastException;
 import com.example.task_manager.exceptions.LabelNotFoundException;
 import com.example.task_manager.models.LabelModel;
 import com.example.task_manager.models.ProjectModel;
@@ -21,6 +22,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
+import java.time.Instant;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -92,6 +94,23 @@ class TaskServiceTest {
     }
 
     @Test
+    void rejectsCreationWithPastDueDateBeforeLoadingRelatedEntities() {
+        var dto = new CreateTaskDto(
+            "Wash dishes",
+            null,
+            1,
+            1,
+            null,
+            Instant.now().minusSeconds(60)
+        );
+
+        assertThrows(TaskDueDateInPastException.class, () -> taskService.saveAndFlush(dto));
+
+        verify(userService, never()).findById(1);
+        verify(taskRepository, never()).saveAndFlush(any(TaskModel.class));
+    }
+
+    @Test
     void findsTaskByIdWithRelations() {
         var task = new TaskModel();
         when(taskRepository.findWithRelationsById(15)).thenReturn(Optional.of(task));
@@ -120,7 +139,7 @@ class TaskServiceTest {
         var task = new TaskModel();
         ReflectionTestUtils.setField(task, "id", 15);
         when(taskRepository.searchIdsByTitleAndDescription("dishes", pageable))
-            .thenReturn(new PageImpl<>(List.of(15), pageable, 1));
+            .thenReturn(new PageImpl<>(List.of(15L), pageable, 1));
         when(taskRepository.findAllWithRelationsByIdIn(List.of(15))).thenReturn(List.of(task));
 
         assertEquals(List.of(task), taskService.findAll("dishes", pageable).getContent());

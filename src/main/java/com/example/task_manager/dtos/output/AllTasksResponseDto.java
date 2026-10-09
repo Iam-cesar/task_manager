@@ -33,10 +33,13 @@ public class AllTasksResponseDto extends RepresentationModel<AllTasksResponseDto
 
     private boolean archived;
 
+    private boolean overdue;
+
     private List<LabelResponseDto> labels;
 
     public AllTasksResponseDto (TaskModel taskModel) {
 
 		BeanUtils.copyProperties(taskModel, this, "user", "project", "labels");
+        this.overdue = taskModel.isOverdue();
 	}
 }

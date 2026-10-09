@@ -3,8 +3,11 @@ package com.example.task_manager.services;
 import com.example.task_manager.dtos.input.CreateTaskDto;
 import com.example.task_manager.dtos.input.LabelIdsDto;
 import com.example.task_manager.dtos.input.UpdateTaskDto;
+import com.example.task_manager.enums.TaskStatusEnum;
 import com.example.task_manager.exceptions.LabelNotFoundException;
+import com.example.task_manager.exceptions.TaskDueDateInPastException;
 import com.example.task_manager.exceptions.TaskNotFoundException;
+import com.example.task_manager.dtos.output.TaskStatusCountDto;
 import com.example.task_manager.models.LabelModel;
 import com.example.task_manager.models.TaskModel;
 import com.example.task_manager.repositories.LabelRepository;
@@ -19,7 +22,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -35,6 +40,10 @@ public class TaskService {
 
 	@Transactional
 	public TaskModel saveAndFlush(@NonNull CreateTaskDto aDto) {
+
+		if (aDto.due_date() != null && aDto.due_date().isBefore(java.time.Instant.now())) {
+			throw new TaskDueDateInPastException();
+		}
 
 		var user = userService.findById(aDto.user_id());
 		var project = projectService.findById(aDto.project_id());
@@ -59,26 +68,40 @@ public class TaskService {
 
 	@Transactional(readOnly = true)
 	public Page<TaskModel> findAll(final String search, Pageable pageable) {
+		return findAll(search, false, pageable);
+	}
 
-		var idsPage =  search == null || search.isBlank()
-			? taskRepository.findAllIds(pageable)
-			: taskRepository.searchIdsByTitleAndDescription(search, pageable);
-
-
-		if (idsPage.isEmpty()) {
-			return new PageImpl<>(List.of(), pageable, idsPage.getTotalElements());
+	@Transactional(readOnly = true)
+	public Page<TaskModel> findAll(final String search, boolean overdue, Pageable pageable) {
+		boolean hasSearch = search != null && !search.isBlank();
+		Page<Number> idsPage;
+		if (overdue) {
+			idsPage = hasSearch
+				? taskRepository.searchOverdueIdsByTitleAndDescription(search, pageable)
+				: taskRepository.findOverdueIds(pageable);
+		} else {
+			idsPage = hasSearch
+				? taskRepository.searchIdsByTitleAndDescription(search, pageable)
+				: taskRepository.findAllIds(pageable);
 		}
 
-		var tasksById = taskRepository.findAllWithRelationsByIdIn(idsPage.getContent())
+		var integerIdsPage = idsPage.map(id -> Math.toIntExact(id.longValue()));
+
+
+		if (integerIdsPage.isEmpty()) {
+			return new PageImpl<>(List.of(), pageable, integerIdsPage.getTotalElements());
+		}
+
+		var tasksById = taskRepository.findAllWithRelationsByIdIn(integerIdsPage.getContent())
 			.stream()
 			.collect(Collectors.toMap(TaskModel::getId, Function.identity()));
 
-		var projectsInPageOrder = idsPage.getContent().stream()
+		var projectsInPageOrder = integerIdsPage.getContent().stream()
 			.map(tasksById::get)
 			.filter(Objects::nonNull)
 			.toList();
 
-		return new PageImpl<>(projectsInPageOrder, pageable, idsPage.getTotalElements());
+		return new PageImpl<>(projectsInPageOrder, pageable, integerIdsPage.getTotalElements());
 	}
 
 	@Transactional
@@ -92,8 +115,40 @@ public class TaskService {
 	}
 
 	@Transactional
+	public TaskModel changeStatus(int anId, TaskStatusEnum status) {
+		var task = findById(anId);
+		task.changeStatus(status);
+		return taskRepository.saveAndFlush(task);
+	}
+
+	@Transactional
+	public TaskModel archive(int anId) {
+		var task = findById(anId);
+		task.archive();
+		return taskRepository.saveAndFlush(task);
+	}
+
+	@Transactional(readOnly = true)
+	public List<TaskStatusCountDto> summarizeByStatus() {
+		Map<TaskStatusEnum, Long> counts = new EnumMap<>(TaskStatusEnum.class);
+
+		for (TaskStatusEnum status : TaskStatusEnum.values()) {
+			counts.put(status, 0L);
+		}
+
+		for (var row : taskRepository.countNonArchivedTasksByStatus()) {
+			counts.put(row.getStatus(), row.getCount());
+		}
+
+		return counts.entrySet().stream()
+			.map(entry -> new TaskStatusCountDto(entry.getKey(), entry.getValue()))
+			.toList();
+	}
+
+	@Transactional
 	public TaskModel addLabels(@NonNull LabelIdsDto aDto, Integer anTargetId)  {
 		var targetTask = findById(anTargetId);
+		targetTask.ensureEditable();
 		var aListOfLabels = new HashSet<>(labelRepository.findAllById(aDto.label_ids()));
 
 		for (LabelModel label : aListOfLabels) {
@@ -108,6 +163,7 @@ public class TaskService {
 	@Transactional
 	public TaskModel removeLabels(@NonNull LabelIdsDto aDto, Integer anTargetId)  {
 		var targetTask = findById(anTargetId);
+		targetTask.ensureEditable();
 		var aListOfLabels = new HashSet<>(labelRepository.findAllById(aDto.label_ids()));
 
 		for (LabelModel label : aListOfLabels) {
@@ -124,9 +180,7 @@ public class TaskService {
 	public void delete(final int anId) {
 
 		var task = findById(anId);
-
-		if (task != null) {
-			taskRepository.deleteById(task.getId());
-		}
+		task.ensureEditable();
+		taskRepository.deleteById(task.getId());
 	}
 }

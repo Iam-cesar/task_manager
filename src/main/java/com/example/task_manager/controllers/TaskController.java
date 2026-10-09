@@ -3,8 +3,10 @@ package com.example.task_manager.controllers;
 import com.example.task_manager.dtos.input.CreateTaskDto;
 import com.example.task_manager.dtos.input.LabelIdsDto;
 import com.example.task_manager.dtos.input.UpdateTaskDto;
+import com.example.task_manager.dtos.input.UpdateTaskStatusDto;
 import com.example.task_manager.dtos.output.AllTasksResponseDto;
 import com.example.task_manager.dtos.output.TaskResponseDto;
+import com.example.task_manager.dtos.output.TaskStatusCountDto;
 import com.example.task_manager.helpers.ConvertRepresentationModel;
 import com.example.task_manager.services.TaskService;
 import jakarta.validation.Valid;
@@ -18,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
+import java.util.List;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
@@ -45,10 +48,11 @@ public class TaskController {
 	@GetMapping
 	public ResponseEntity<PagedModel<AllTasksResponseDto>> getAllTasks(
 		@RequestParam(required = false) String search,
+		@RequestParam(defaultValue = "false") boolean overdue,
 	    @PageableDefault(size = 10) final Pageable pageable
 	) {
 		final var tasks = ConvertRepresentationModel
-			.toPageList(taskService.findAll(search, pageable), AllTasksResponseDto::new);
+			.toPageList(taskService.findAll(search, overdue, pageable), AllTasksResponseDto::new);
 
 		if (!tasks.isEmpty()) {
 			for (AllTasksResponseDto task : tasks.getContent()) {
@@ -58,6 +62,11 @@ public class TaskController {
 		}
 
 		return ResponseEntity.ok(new PagedModel<>(tasks));
+	}
+
+	@GetMapping("/summary/status")
+	public ResponseEntity<List<TaskStatusCountDto>> getStatusSummary() {
+		return ResponseEntity.ok(taskService.summarizeByStatus());
 	}
 
 	@GetMapping("/{id}")
@@ -71,11 +80,24 @@ public class TaskController {
 	@PatchMapping("/{id}")
 	public ResponseEntity<TaskResponseDto> updateTaskById(
 		@PathVariable final int id,
-		@Valid @NonNull final UpdateTaskDto aDto
+		@RequestBody @Valid @NonNull final UpdateTaskDto aDto
 	) {
 		final var updatedTasks = taskService.updateAndFlush(id, aDto);
 
 		return ResponseEntity.ok(new TaskResponseDto(updatedTasks));
+	}
+
+	@PatchMapping("/{id}/status")
+	public ResponseEntity<TaskResponseDto> updateTaskStatus(
+		@PathVariable final int id,
+		@RequestBody @Valid @NonNull final UpdateTaskStatusDto aDto
+	) {
+		return ResponseEntity.ok(new TaskResponseDto(taskService.changeStatus(id, aDto.status())));
+	}
+
+	@PostMapping("/{id}/archive")
+	public ResponseEntity<TaskResponseDto> archiveTask(@PathVariable final int id) {
+		return ResponseEntity.ok(new TaskResponseDto(taskService.archive(id)));
 	}
 
 	@PatchMapping("/{id}/add-labels")

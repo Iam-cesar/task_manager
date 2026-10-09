@@ -15,8 +15,10 @@ import org.springframework.stereotype.Service;
 
 import com.example.task_manager.dtos.input.UpdateUserDto;
 import com.example.task_manager.exceptions.UserAlreadyExistsException;
+import com.example.task_manager.exceptions.UserHasTasksException;
 import com.example.task_manager.exceptions.UserNotFoundException;
 import com.example.task_manager.models.UserModel;
+import com.example.task_manager.repositories.TaskRepository;
 import com.example.task_manager.repositories.UserRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -27,6 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final TaskRepository taskRepository;
 
 	@Transactional
     public UserModel saveAndFlush(@NonNull final UserModel aUser) throws UserAlreadyExistsException {
@@ -44,24 +47,26 @@ public class UserService {
 	@Transactional(readOnly = true)
     public Page<UserModel> findAll(final String aSearch, Pageable pageable) {
 
-		var idsPage = aSearch == null || aSearch.isBlank()
+		Page<Number> idsPage = aSearch == null || aSearch.isBlank()
 			? userRepository.findAllIds(pageable)
 			: userRepository.searchByNameAndEmail(aSearch, pageable);
 
-		if (idsPage.isEmpty()) {
-			return new PageImpl<>(List.of(), pageable, idsPage.getTotalElements());
+		var integerIdsPage = idsPage.map(id -> Math.toIntExact(id.longValue()));
+
+		if (integerIdsPage.isEmpty()) {
+			return new PageImpl<>(List.of(), pageable, integerIdsPage.getTotalElements());
 		}
 
-	    var usersById = userRepository.findAllById(idsPage.getContent())
+	    var usersById = userRepository.findAllById(integerIdsPage.getContent())
 		    .stream()
 		    .collect(Collectors.toMap(UserModel::getId, Function.identity()));
 
-		var usersInPageOrder = idsPage.getContent().stream()
+		var usersInPageOrder = integerIdsPage.getContent().stream()
 			.map(usersById::get)
 			.filter(Objects::nonNull)
 			.toList();
 
-	    return new PageImpl<>(usersInPageOrder, pageable, idsPage.getTotalElements());
+	    return new PageImpl<>(usersInPageOrder, pageable, integerIdsPage.getTotalElements());
 	}
 
     public UserModel findById(final int anId) throws UserNotFoundException {
@@ -110,7 +115,11 @@ public class UserService {
 
         UserModel user = findById(anId);
 
-        if (user != null) { userRepository.deleteById(user.getId()); }
+        if (taskRepository.existsAssignedTasksForUser(user.getId())) {
+            throw new UserHasTasksException();
+        }
+
+        userRepository.deleteById(user.getId());
     }
 
     public boolean existsByEmail(final String anEmail) {

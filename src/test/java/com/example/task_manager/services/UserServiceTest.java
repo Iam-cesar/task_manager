@@ -1,7 +1,9 @@
 package com.example.task_manager.services;
 
 import com.example.task_manager.exceptions.UserNotFoundException;
+import com.example.task_manager.exceptions.UserHasTasksException;
 import com.example.task_manager.models.UserModel;
+import com.example.task_manager.repositories.TaskRepository;
 import com.example.task_manager.repositories.UserRepository;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -21,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -28,6 +31,9 @@ class UserServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private TaskRepository taskRepository;
 
     @InjectMocks
     private UserService userService;
@@ -59,6 +65,26 @@ class UserServiceTest {
             assertEquals(List.of(first, second), result.getContent());
             assertEquals(3, result.getTotalElements());
         }
+
+        @Test
+        @DisplayName("Should convert native query Long IDs to Integer IDs")
+        void shouldConvertLongIdsFromSearchResults() {
+            var pageable = PageRequest.of(0, 1);
+            var user = new UserModel();
+            ReflectionTestUtils.setField(user, "id", 42);
+            user.setName("A User");
+            user.setEmail("a@example.com");
+
+            when(userRepository.searchByNameAndEmail("A User", pageable))
+                .thenReturn(new PageImpl<>(List.of(42L), pageable, 1));
+            when(userRepository.findAllById(List.of(42)))
+                .thenReturn(List.of(user));
+
+            var result = userService.findAll("A User", pageable);
+
+            assertEquals(List.of(user), result.getContent());
+            verify(userRepository).findAllById(List.of(42));
+        }
     }
 
     @Nested
@@ -74,11 +100,26 @@ class UserServiceTest {
             user.setEmail("john@example.com");
 
             when(userRepository.findById(1)).thenReturn(Optional.of(user));
+            when(taskRepository.existsAssignedTasksForUser(1)).thenReturn(false);
 
             assertDoesNotThrow(() -> userService.deleteById(1));
 
             verify(userRepository).findById(1);
+            verify(taskRepository).existsAssignedTasksForUser(1);
             verify(userRepository).deleteById(1);
+        }
+
+        @Test
+        @DisplayName("Should block deletion when the user has assigned tasks")
+        void shouldBlockDeletingUserWithAssignedTasks() {
+            var user = new UserModel();
+            ReflectionTestUtils.setField(user, "id", 1);
+            when(userRepository.findById(1)).thenReturn(Optional.of(user));
+            when(taskRepository.existsAssignedTasksForUser(1)).thenReturn(true);
+
+            assertThrows(UserHasTasksException.class, () -> userService.deleteById(1));
+
+            verify(userRepository, never()).deleteById(1);
         }
 
         @Test

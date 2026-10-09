@@ -87,14 +87,14 @@ Não está definido aqui se etiqueta é entidade própria ou coleção de valore
 
 1. Toda tarefa precisa de título; título vazio ou apenas espaços é inválido.
 2. Título tem tamanho máximo definido e a violação deve ser rejeitada pela API, não pelo banco.
-3. A data de vencimento, quando informada na criação, não pode estar no passado.
+3. A data de vencimento, quando informada na criação, não pode estar no passado; a validação identifica `due_date` no formato padrão de erro.
 4. Uma tarefa só pode ser atribuída a um usuário existente e **ativo**.
-5. O status segue um ciclo de vida: uma tarefa nasce pendente, pode ir para em andamento, e de lá para concluída ou cancelada. Qualquer transição fora do que for definido como legítimo deve ser recusada — inclusive reabrir uma tarefa concluída ou concluir uma cancelada.
+5. O status segue um ciclo de vida: uma tarefa nasce pendente, pode ir para em andamento, e de lá para concluída ou cancelada. Qualquer transição fora do que for definido como legítimo deve ser recusada — inclusive reabrir uma tarefa concluída ou concluir uma cancelada. A API aceita a mudança por `PATCH /tasks/{id}/status`.
 6. Ao ser concluída, a tarefa registra a data de conclusão automaticamente; essa data nunca é informada pelo cliente.
-7. Uma tarefa concluída ou cancelada não aceita alteração de conteúdo (título, descrição, prioridade, vencimento, responsável).
-8. Uma tarefa arquivada não aparece nas listagens padrão e não aceita nenhuma alteração.
-9. Excluir um usuário que possui tarefas não pode deixar tarefas órfãs; a política adotada (bloquear, desatribuir ou apenas desativar) deve ser explícita e consistente.
-10. Uma tarefa é considerada atrasada quando tem data de vencimento anterior a hoje e não está concluída nem cancelada.
+7. Uma tarefa concluída ou cancelada não aceita alteração de conteúdo nem etiquetas.
+8. Uma tarefa arquivada não aparece nas listagens padrão, não pode ser alterada nem excluída. O arquivamento é feito por `POST /tasks/{id}/archive`.
+9. A exclusão de usuário com tarefas atribuídas é bloqueada com conflito (`409`); as tarefas permanecem associadas ao usuário.
+10. Uma tarefa é considerada atrasada quando sua data/hora de vencimento já passou e não está concluída, cancelada ou arquivada. O campo `overdue` nas respostas indica essa condição; filtre com `GET /tasks?overdue=true`, combinável com `search`, paginação e ordenação.
 11. E-mail de usuário é único no sistema, e a tentativa de duplicar deve retornar conflito — não erro genérico de servidor.
 12. Nenhuma listagem de coleção pode retornar a base inteira: paginação é obrigatória, com limite máximo de itens por página imposto pelo servidor.
 
@@ -117,6 +117,35 @@ Não está definido aqui se etiqueta é entidade própria ou coleção de valore
 - Documentação da API gerada (OpenAPI/Swagger)
 - Perfis de configuração separados para desenvolvimento e teste
 - Logging estruturado mínimo
+
+O resumo `GET /tasks/summary/status` retorna contagem por status para tarefas não arquivadas, incluindo status com contagem zero. Os perfis padrão são `dev` e `test`; `application-dev.properties` usa o banco de desenvolvimento configurado em `application.properties`, enquanto `application-test.properties` configura H2 e desativa Liquibase.
+
+### Formato de erro da API
+
+Todas as respostas de erro usam o mesmo corpo: `status` contém o status HTTP, `message` descreve a falha e `errors` é sempre uma lista. Para erros de domínio ou HTTP sem campos inválidos, `errors` fica vazia:
+
+```json
+{
+  "status": "404 NOT_FOUND",
+  "message": "Task not found",
+  "errors": []
+}
+```
+
+Erros de validação retornam `400 BAD_REQUEST` e identificam cada campo inválido:
+
+```json
+{
+  "status": "400 BAD_REQUEST",
+  "message": "Validation failed",
+  "errors": [
+    {
+      "field": "title",
+      "message": "Title should not be empty"
+    }
+  ]
+}
+```
 
 ## Desafios técnicos
 

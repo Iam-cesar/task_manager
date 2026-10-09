@@ -35,12 +35,11 @@ public interface UserRepository extends JpaRepository<UserModel, Integer> {
 		""",
 		nativeQuery = true
 	)
-	Page<Integer> searchByNameAndEmail(@Param("search") String aSearch, Pageable pageable);
+	Page<Number> searchByNameAndEmail(@Param("search") String search, Pageable pageable);
 
 	@Query(
 		value = "SELECT u.id FROM UserModel u ORDER BY u.name ASC, u.id ASC",
 		countQuery = "SELECT COUNT(u) FROM UserModel u"
 	)
-	Page<Integer> findAllIds(Pageable pageable);
-
+	Page<Number> findAllIds(Pageable pageable);
 }

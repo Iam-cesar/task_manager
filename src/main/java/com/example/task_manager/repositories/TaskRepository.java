@@ -5,6 +5,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.example.task_manager.models.TaskModel;
+import com.example.task_manager.enums.TaskStatusEnum;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -16,7 +17,8 @@ public interface TaskRepository extends JpaRepository<TaskModel, Integer> {
 	@Query(value = """
 		SELECT t.id
 		FROM TB_TASKS t
-		WHERE to_tsvector(
+		WHERE t.archived = false
+			AND to_tsvector(
 			'simple',
 			coalesce(t.title, '') || ' ' || coalesce(t.description, '')
 		) @@ websearch_to_tsquery('simple', :search)
@@ -25,13 +27,43 @@ public interface TaskRepository extends JpaRepository<TaskModel, Integer> {
 		countQuery = """
 			SELECT COUNT(*)
 			FROM TB_TASKS t
-			WHERE to_tsvector(
+			WHERE t.archived = false
+				AND to_tsvector(
 				'simple',
 				coalesce(t.title, '') || ' ' || coalesce(t.description, '')
 			) @@ websearch_to_tsquery('simple', :search)
 		""",
 		nativeQuery = true)
-	Page<Integer> searchIdsByTitleAndDescription(@Param("search") String aSearch, Pageable pageable);
+	Page<Number> searchIdsByTitleAndDescription(@Param("search") String search, Pageable pageable);
+
+	@Query(value = """
+		SELECT t.id
+		FROM TB_TASKS t
+		WHERE t.archived = false
+			AND t.due_date < CURRENT_TIMESTAMP
+			AND t.status NOT IN ('COMPLETED', 'CANCELED')
+			AND to_tsvector(
+				'simple',
+				coalesce(t.title, '') || ' ' || coalesce(t.description, '')
+			) @@ websearch_to_tsquery('simple', :search)
+		ORDER BY t.title ASC, t.id ASC
+		""",
+		countQuery = """
+			SELECT COUNT(*)
+			FROM TB_TASKS t
+			WHERE t.archived = false
+				AND t.due_date < CURRENT_TIMESTAMP
+				AND t.status NOT IN ('COMPLETED', 'CANCELED')
+				AND to_tsvector(
+					'simple',
+					coalesce(t.title, '') || ' ' || coalesce(t.description, '')
+				) @@ websearch_to_tsquery('simple', :search)
+		""",
+		nativeQuery = true)
+	Page<Number> searchOverdueIdsByTitleAndDescription(
+		@Param("search") String search,
+		Pageable pageable
+	);
 
 	@Query("""
 		SELECT DISTINCT t FROM TaskModel t
@@ -66,13 +98,35 @@ public interface TaskRepository extends JpaRepository<TaskModel, Integer> {
 		JOIN FETCH t.user
 		LEFT JOIN FETCH t.taskLabels taskLabel
 		LEFT JOIN FETCH taskLabel.label
+		WHERE t.archived = false
 		ORDER BY t.title ASC
 	""")
 	List<TaskModel> findAllWithRelations();
 
 	@Query(
-		value = "SELECT t.id FROM TaskModel t ORDER BY t.title ASC, t.id ASC",
-		countQuery = "SELECT COUNT(t) FROM TaskModel t"
+		value = "SELECT t.id FROM TaskModel t WHERE t.archived = false ORDER BY t.title ASC, t.id ASC",
+		countQuery = "SELECT COUNT(t) FROM TaskModel t WHERE t.archived = false"
 	)
-	Page<Integer> findAllIds(Pageable pageable);
+	Page<Number> findAllIds(Pageable pageable);
+
+	@Query("""
+		SELECT t.id FROM TaskModel t
+		WHERE t.archived = false
+			AND t.due_date < CURRENT_TIMESTAMP
+			AND t.status NOT IN (com.example.task_manager.enums.TaskStatusEnum.COMPLETED,
+				com.example.task_manager.enums.TaskStatusEnum.CANCELED)
+		ORDER BY t.title ASC, t.id ASC
+		""")
+	Page<Number> findOverdueIds(Pageable pageable);
+
+	@Query("""
+		SELECT t.status AS status, COUNT(t) AS count
+		FROM TaskModel t
+		WHERE t.archived = false
+		GROUP BY t.status
+		""")
+	List<TaskStatusCountProjection> countNonArchivedTasksByStatus();
+
+	@Query("SELECT CASE WHEN COUNT(t) > 0 THEN true ELSE false END FROM TaskModel t WHERE t.user.id = :userId")
+	boolean existsAssignedTasksForUser(@Param("userId") Integer userId);
 }

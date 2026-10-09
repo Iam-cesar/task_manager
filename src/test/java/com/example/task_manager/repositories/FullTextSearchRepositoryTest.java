@@ -168,12 +168,14 @@ class FullTextSearchRepositoryTest {
 
     @Test
     void searchesUsersAcrossNameAndEmail() {
-        List<Integer> resultsByName = userRepository
+        List<Number> resultsByName = userRepository
             .searchByNameAndEmail("Lovelace", PageRequest.of(0, 10)).getContent();
-        List<Integer> resultsByEmail = userRepository
+        List<Number> resultsByEmail = userRepository
             .searchByNameAndEmail("ada@example.com", PageRequest.of(0, 10)).getContent();
 
-        assertThat(resultsByName).containsExactly(user.getId());
-        assertThat(resultsByEmail).containsExactly(user.getId());
+        assertThat(resultsByName.stream().map(id -> Math.toIntExact(id.longValue())).toList())
+            .containsExactly(user.getId());
+        assertThat(resultsByEmail.stream().map(id -> Math.toIntExact(id.longValue())).toList())
+            .containsExactly(user.getId());
     }
 }

@@ -7,6 +7,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.example.task_manager.dtos.input.CreateTaskDto;
+import com.example.task_manager.exceptions.InvalidTaskTransitionException;
+import com.example.task_manager.exceptions.TaskNotEditableException;
 import jakarta.persistence.*;
 import org.hibernate.annotations.ColumnDefault;
 
@@ -19,7 +21,6 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 import org.jspecify.annotations.NonNull;
 import org.springframework.beans.BeanUtils;
 
@@ -45,8 +46,9 @@ public class TaskModel extends BaseEntity {
 		UserModel user,
 		@NonNull Set<LabelModel> labels
 	) {
-		BeanUtils.copyProperties(aDto, this);
-
+		this.title = aDto.title();
+		this.description = aDto.description();
+		this.due_date = aDto.due_date();
 		this.project = pm;
 		this.user = user;
 		labels.forEach(this::addLabel);
@@ -63,16 +65,13 @@ public class TaskModel extends BaseEntity {
     @NotBlank
     @Size(max = 60)
     @Column(nullable = false, length = 60)
-    @Setter
     private String title;
 
     @Size(max = 255)
     @Column(length = 255)
-    @Setter
     private String description;
 
     @NotNull
-    @Setter
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(
         name = "project_id",
@@ -81,7 +80,6 @@ public class TaskModel extends BaseEntity {
     private ProjectModel project;
 
     @NotNull
-    @Setter
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(
         name = "user_id",
@@ -96,12 +94,10 @@ public class TaskModel extends BaseEntity {
     private TaskStatusEnum status = TaskStatusEnum.PENDING;
 
     @NotNull
-    @Setter
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private TaskPriorityEnum priority = TaskPriorityEnum.MEDIUM;
 
-    @Setter
     private Instant due_date;
 
     private Instant completion_date;
@@ -113,52 +109,100 @@ public class TaskModel extends BaseEntity {
     @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<TaskLabelModel> taskLabels = new HashSet<>();
 
+    public void setTitle(String title) {
+        ensureEditable();
+        this.title = title;
+    }
+
+    public void setDescription(String description) {
+        ensureEditable();
+        this.description = description;
+    }
+
+    public void setProject(ProjectModel project) {
+        ensureEditable();
+        this.project = project;
+    }
+
+    public void setUser(UserModel user) {
+        ensureEditable();
+        this.user = user;
+    }
+
+    public void setPriority(TaskPriorityEnum priority) {
+        ensureEditable();
+        this.priority = priority;
+    }
+
+    public void setDue_date(Instant dueDate) {
+        ensureEditable();
+        this.due_date = dueDate;
+    }
+
     public void start() {
-        this.status = TaskStatusEnum.RUNNING;
-        this.completion_date = null;
+        changeStatus(TaskStatusEnum.RUNNING);
     }
 
     public void complete() {
-        this.status = TaskStatusEnum.COMPLETED;
-        this.completion_date = Instant.now();
+        changeStatus(TaskStatusEnum.COMPLETED);
     }
 
     public void cancel() {
-        this.status = TaskStatusEnum.CANCELED;
-        this.completion_date = null;
+        changeStatus(TaskStatusEnum.CANCELED);
     }
 
     public void reopen() {
-        this.status = TaskStatusEnum.PENDING;
-        this.completion_date = null;
+        changeStatus(TaskStatusEnum.PENDING);
     }
 
     public void changeStatus(TaskStatusEnum newStatus) {
         Objects.requireNonNull(newStatus, "Status cannot be null");
-        switch (newStatus) {
-            case PENDING   -> reopen();
-            case RUNNING   -> start();
-            case CANCELED  -> cancel();
-            case COMPLETED -> complete();
+        ensureEditable();
+
+        boolean validTransition = switch (status) {
+            case PENDING -> newStatus == TaskStatusEnum.RUNNING;
+            case RUNNING -> newStatus == TaskStatusEnum.COMPLETED
+	                     || newStatus == TaskStatusEnum.CANCELED;
+            case COMPLETED, CANCELED -> false;
+        };
+
+        if (!validTransition) {
+            throw new InvalidTaskTransitionException(
+                "Cannot change task status from " + status + " to " + newStatus
+            );
         }
+
+        this.status = newStatus;
+        this.completion_date = newStatus == TaskStatusEnum.COMPLETED ? Instant.now() : null;
     }
 
     public void archive() {
+        if (archived) {
+            throw new TaskNotEditableException("Archived tasks cannot be changed");
+        }
         this.archived = true;
     }
 
-    public void unarchive() {
-        this.archived = false;
+    public void ensureEditable() {
+        if (archived) {
+            throw new TaskNotEditableException("Archived tasks cannot be changed");
+        }
+
+        if (status == TaskStatusEnum.COMPLETED || status == TaskStatusEnum.CANCELED) {
+            throw new TaskNotEditableException("Completed or canceled tasks cannot be changed");
+        }
     }
 
     public boolean isOverdue() {
-        return due_date != null
+        return !archived
+            && due_date != null
             && status != TaskStatusEnum.COMPLETED
             && status != TaskStatusEnum.CANCELED
             && due_date.isBefore(Instant.now());            
     }
 
     public void addLabel(LabelModel label) {
+        ensureEditable();
         if (taskLabels.stream().noneMatch(taskLabel -> sameLabel(taskLabel.getLabel(), label))) {
             TaskLabelModel taskLabel = new TaskLabelModel(this, label);
             taskLabels.add(taskLabel);
@@ -167,6 +211,7 @@ public class TaskModel extends BaseEntity {
     }
 
     public void removeLabel(LabelModel label) {
+        ensureEditable();
         taskLabels.removeIf(taskLabel -> {
             if (sameLabel(taskLabel.getLabel(), label)) {
                 taskLabel.getLabel().internalTaskLabels().remove(taskLabel);
@@ -187,9 +232,10 @@ public class TaskModel extends BaseEntity {
 
     @PreRemove
     public void clearLabels() {
-        for (LabelModel label : new HashSet<>(getLabels())) {
-            removeLabel(label);
+        for (TaskLabelModel taskLabel : new HashSet<>(taskLabels)) {
+            taskLabel.getLabel().internalTaskLabels().remove(taskLabel);
         }
+        taskLabels.clear();
     }
 
     @Override
@@ -208,5 +254,9 @@ public class TaskModel extends BaseEntity {
         return taskLabels.stream()
             .map(TaskLabelModel::getLabel)
             .collect(Collectors.toUnmodifiableSet());
+    }
+
+    public Set<TaskLabelModel> getTaskLabels() {
+        return Set.copyOf(taskLabels);
     }
 }
