@@ -20,12 +20,14 @@ import com.example.task_manager.dtos.output.ProjectResponseDto;
 import com.example.task_manager.services.ProjectService;
 
 import jakarta.validation.Valid;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.AllArgsConstructor;
 import lombok.NonNull;
 
 @RestController
 @AllArgsConstructor
 @RequestMapping("/projects")
+@Tag(name = "Projects", description = "Manage projects and their members")
 public class ProjectsController {
 
     private final ProjectService projectService;

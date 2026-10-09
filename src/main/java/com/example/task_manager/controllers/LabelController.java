@@ -6,6 +6,7 @@ import com.example.task_manager.dtos.output.LabelResponseDto;
 import com.example.task_manager.helpers.ConvertRepresentationModel;
 import com.example.task_manager.services.LabelService;
 import jakarta.validation.Valid;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.AllArgsConstructor;
 import lombok.NonNull;
 import org.springframework.data.domain.Pageable;
@@ -23,6 +24,7 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 @RestController
 @AllArgsConstructor
 @RequestMapping("/labels")
+@Tag(name = "Labels", description = "Manage task labels")
 public class LabelController {
 
 	private final LabelService labelService;

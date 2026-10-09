@@ -10,6 +10,9 @@ import com.example.task_manager.dtos.output.TaskStatusCountDto;
 import com.example.task_manager.helpers.ConvertRepresentationModel;
 import com.example.task_manager.services.TaskService;
 import jakarta.validation.Valid;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.AllArgsConstructor;
 import lombok.NonNull;
 import org.springframework.data.domain.Pageable;
@@ -28,6 +31,7 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 @RestController
 @RequestMapping("/tasks")
 @AllArgsConstructor
+@Tag(name = "Tasks", description = "Create, query, update, and archive tasks")
 public class TaskController {
 
 	private final TaskService taskService;
@@ -46,8 +50,10 @@ public class TaskController {
 	}
 
 	@GetMapping
+	@Operation(summary = "List tasks", description = "Supports full-text search, pagination, sorting, and the overdue filter.")
 	public ResponseEntity<PagedModel<AllTasksResponseDto>> getAllTasks(
 		@RequestParam(required = false) String search,
+		@Parameter(description = "When true, return only tasks past their due date that are neither completed, canceled, nor archived.")
 		@RequestParam(defaultValue = "false") boolean overdue,
 	    @PageableDefault(size = 10) final Pageable pageable
 	) {
@@ -65,6 +71,7 @@ public class TaskController {
 	}
 
 	@GetMapping("/summary/status")
+	@Operation(summary = "Count tasks by status", description = "Returns counts for each status, excluding archived tasks.")
 	public ResponseEntity<List<TaskStatusCountDto>> getStatusSummary() {
 		return ResponseEntity.ok(taskService.summarizeByStatus());
 	}
@@ -88,6 +95,7 @@ public class TaskController {
 	}
 
 	@PatchMapping("/{id}/status")
+	@Operation(summary = "Change task status", description = "Allowed transitions: pending to running, then running to completed or canceled.")
 	public ResponseEntity<TaskResponseDto> updateTaskStatus(
 		@PathVariable final int id,
 		@RequestBody @Valid @NonNull final UpdateTaskStatusDto aDto
@@ -96,6 +104,7 @@ public class TaskController {
 	}
 
 	@PostMapping("/{id}/archive")
+	@Operation(summary = "Archive a task", description = "Archived tasks are omitted from standard listings and cannot be changed.")
 	public ResponseEntity<TaskResponseDto> archiveTask(@PathVariable final int id) {
 		return ResponseEntity.ok(new TaskResponseDto(taskService.archive(id)));
 	}

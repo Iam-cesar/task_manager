@@ -21,11 +21,13 @@ import com.example.task_manager.models.UserModel;
 import com.example.task_manager.services.UserService;
 
 import jakarta.validation.Valid;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.AllArgsConstructor;
 
 @RestController
 @AllArgsConstructor
 @RequestMapping("/users")
+@Tag(name = "Users", description = "Manage users and their active status")
 public class UserController {
 
     private final UserService userService;

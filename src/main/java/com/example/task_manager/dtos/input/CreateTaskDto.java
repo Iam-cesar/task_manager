@@ -4,6 +4,7 @@ import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.Instant;
 import java.util.List;
@@ -24,6 +25,7 @@ public record CreateTaskDto(
 
 	List<Integer> label_ids,
 
+	@Schema(description = "Optional task deadline; must be a future date and time.", example = "2030-01-15T17:00:00Z")
 	@Future(message = "Due date must be in the future")
 	Instant due_date
 ) {

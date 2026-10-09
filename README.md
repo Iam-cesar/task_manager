@@ -120,6 +120,10 @@ Não está definido aqui se etiqueta é entidade própria ou coleção de valore
 
 O resumo `GET /tasks/summary/status` retorna contagem por status para tarefas não arquivadas, incluindo status com contagem zero. Os perfis padrão são `dev` e `test`; `application-dev.properties` usa o banco de desenvolvimento configurado em `application.properties`, enquanto `application-test.properties` configura H2 e desativa Liquibase.
 
+### OpenAPI / Swagger UI
+
+Com a aplicação em execução, a especificação OpenAPI está disponível em `/api/v3/api-docs` e a interface interativa Swagger UI em `/api/swagger-ui.html`.
+
 ### Formato de erro da API
 
 Todas as respostas de erro usam o mesmo corpo: `status` contém o status HTTP, `message` descreve a falha e `errors` é sempre uma lista. Para erros de domínio ou HTTP sem campos inválidos, `errors` fica vazia:
