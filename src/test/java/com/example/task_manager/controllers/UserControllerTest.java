@@ -33,6 +33,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.example.task_manager.dtos.input.UpdateUserDto;
 import com.example.task_manager.exceptions.UserAlreadyExistsException;
+import com.example.task_manager.exceptions.UserHasTasksException;
 import com.example.task_manager.exceptions.UserNotFoundException;
 import com.example.task_manager.models.UserModel;
 import com.example.task_manager.services.UserService;
@@ -291,6 +292,17 @@ class UserControllerTest {
 
             mockMvc.perform(delete("/users/999"))
                     .andExpect(status().isNotFound());
+        }
+
+        @Test
+        @DisplayName("Should return 409 when deleting a user with assigned tasks")
+        void shouldReturn409WhenUserHasAssignedTasks() throws Exception {
+            doThrow(new UserHasTasksException()).when(userService).deleteById(1);
+
+            mockMvc.perform(delete("/users/1"))
+                    .andExpect(status().isConflict())
+                    .andExpect(jsonPath("$.message", is("Cannot delete a user who has assigned tasks")))
+                    .andExpect(jsonPath("$.errors", hasSize(0)));
         }
     }
 }

@@ -118,7 +118,9 @@ class ProjectsControllerTest {
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(requestBody))
                     .andExpect(status().isBadRequest())
-                    .andExpect(jsonPath("$.message", is("Project owner id must not be null")));
+                            .andExpect(jsonPath("$.message", is("Validation failed")))
+                            .andExpect(jsonPath("$.errors[0].field", is("project_owner_id")))
+                            .andExpect(jsonPath("$.errors[0].message", is("must not be null")));
         }
 
         @Test
