@@ -9,9 +9,14 @@ import jakarta.transaction.Transactional;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -32,6 +37,26 @@ public class LabelService {
 		return search == null || search.isBlank()
 			? labelRepository.findAllWithTasks()
 			: findByName(search);
+	}
+
+	public Page<LabelModel> findAll(final String search, final Pageable pageable) {
+		final var idsPage = search == null || search.isBlank()
+			? labelRepository.findAllIds(pageable)
+			: labelRepository.searchIdsByName(search, pageable);
+
+		if (idsPage.isEmpty()) {
+			return new PageImpl<>(List.of(), pageable, idsPage.getTotalElements());
+		}
+
+		final var labelsById = labelRepository.findAllWithTasksByIdIn(idsPage.getContent())
+			.stream()
+			.collect(Collectors.toMap(LabelModel::getId, Function.identity()));
+
+		final var labelsInPageOrder = idsPage.getContent().stream()
+			.map(labelsById::get)
+			.toList();
+
+		return new PageImpl<>(labelsInPageOrder, pageable, idsPage.getTotalElements());
 	}
 
 	public List<LabelModel> findByName(@NonNull final String aName) {

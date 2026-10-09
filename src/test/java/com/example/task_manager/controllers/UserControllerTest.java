@@ -24,6 +24,8 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -126,29 +128,35 @@ class UserControllerTest {
         void shouldReturnAllUsersWithHateoasLinks() throws Exception {
             UserModel user1 = createMockUser(1, "User One", "user1@example.com");
             UserModel user2 = createMockUser(2, "User Two", "user2@example.com");
-            when(userService.findAll(null)).thenReturn(List.of(user1, user2));
+            var pageable = PageRequest.of(0, 10);
+            when(userService.findAll(null, pageable))
+                .thenReturn(new PageImpl<>(List.of(user1, user2), pageable, 2));
 
             mockMvc.perform(get("/users"))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$", hasSize(2)))
-                    .andExpect(jsonPath("$[0].id", is(1)))
-                    .andExpect(jsonPath("$[0].name", is("User One")))
-                    .andExpect(jsonPath("$[0].links[0].rel", is("self")))
-                    .andExpect(jsonPath("$[0].links[0].href", containsString("/users/1")))
-                    .andExpect(jsonPath("$[1].id", is(2)))
-                    .andExpect(jsonPath("$[1].name", is("User Two")))
-                    .andExpect(jsonPath("$[1].links[0].rel", is("self")))
-                    .andExpect(jsonPath("$[1].links[0].href", containsString("/users/2")));
+                    .andExpect(jsonPath("$.content", hasSize(2)))
+                    .andExpect(jsonPath("$.content[0].id", is(1)))
+                    .andExpect(jsonPath("$.content[0].name", is("User One")))
+                    .andExpect(jsonPath("$.content[0].links[0].rel", is("self")))
+                    .andExpect(jsonPath("$.content[0].links[0].href", containsString("/users/1")))
+                    .andExpect(jsonPath("$.content[1].id", is(2)))
+                    .andExpect(jsonPath("$.content[1].name", is("User Two")))
+                    .andExpect(jsonPath("$.content[1].links[0].rel", is("self")))
+                    .andExpect(jsonPath("$.content[1].links[0].href", containsString("/users/2")))
+                    .andExpect(jsonPath("$.page.totalElements", is(2)));
         }
 
         @Test
         @DisplayName("Should return 200 OK with empty list when no users exist")
         void shouldReturnEmptyListWhenNoUsers() throws Exception {
-            when(userService.findAll(null)).thenReturn(Collections.emptyList());
+            var pageable = PageRequest.of(0, 10);
+            when(userService.findAll(null, pageable))
+                .thenReturn(new PageImpl<>(Collections.emptyList(), pageable, 0));
 
             mockMvc.perform(get("/users"))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$", hasSize(0)));
+                    .andExpect(jsonPath("$.content", hasSize(0)))
+                    .andExpect(jsonPath("$.page.totalElements", is(0)));
         }
     }
 

@@ -1,10 +1,16 @@
 package com.example.task_manager.services;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.jspecify.annotations.NonNull;
 import org.springframework.beans.BeanUtils;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.example.task_manager.dtos.input.UpdateUserDto;
@@ -35,22 +41,27 @@ public class UserService {
         return userRepository.saveAndFlush(aUser);
     }
 
-	public List<UserModel> searchByNameAndDescription(@NonNull final String aName) {
+	@Transactional(readOnly = true)
+    public Page<UserModel> findAll(final String aSearch, Pageable pageable) {
 
-		List<UserModel> users = userRepository.searchByNameAndEmail(aName);
+		var idsPage = aSearch == null || aSearch.isBlank()
+			? userRepository.findAllIds(pageable)
+			: userRepository.searchByNameAndEmail(aSearch, pageable);
 
-		if (users.isEmpty()) {
-			return List.of();
+		if (idsPage.isEmpty()) {
+			return new PageImpl<>(List.of(), pageable, idsPage.getTotalElements());
 		}
 
-		return users;
-	}
+	    var usersById = userRepository.findAllById(idsPage.getContent())
+		    .stream()
+		    .collect(Collectors.toMap(UserModel::getId, Function.identity()));
 
-    public List<UserModel> findAll(final String aSearch) {
+		var usersInPageOrder = idsPage.getContent().stream()
+			.map(usersById::get)
+			.filter(Objects::nonNull)
+			.toList();
 
-		return aSearch == null || aSearch.isBlank()
-			? userRepository.findAll()
-			:searchByNameAndDescription(aSearch);
+	    return new PageImpl<>(usersInPageOrder, pageable, idsPage.getTotalElements());
 	}
 
     public UserModel findById(final int anId) throws UserNotFoundException {

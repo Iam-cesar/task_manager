@@ -16,6 +16,7 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.PageRequest;
 import com.example.task_manager.services.ProjectService;
 import com.example.task_manager.services.LabelService;
 import com.example.task_manager.services.TaskService;
@@ -138,7 +139,10 @@ class FullTextSearchRepositoryTest {
 
     @Test
     void searchesTasksAcrossTitleAndDescription() {
-        List<TaskModel> results = taskService.searchByTitleAndDescription("tests PostgreSQL");
+        List<TaskModel> results = taskService.findAll(
+            "tests PostgreSQL",
+            PageRequest.of(0, 10)
+        ).getContent();
 
         assertThat(results).hasSize(1);
         assertThat(results.get(0).getTitle()).isEqualTo("Write tests");
@@ -146,7 +150,10 @@ class FullTextSearchRepositoryTest {
 
     @Test
     void loadsTaskRelationsAfterRepositorySessionCloses() {
-        List<TaskModel> results = taskService.searchByTitleAndDescription("tests PostgreSQL");
+        List<TaskModel> results = taskService.findAll(
+            "tests PostgreSQL",
+            PageRequest.of(0, 10)
+        ).getContent();
         entityManager.clear();
 
         TaskModel result = results.get(0);
@@ -161,10 +168,12 @@ class FullTextSearchRepositoryTest {
 
     @Test
     void searchesUsersAcrossNameAndEmail() {
-        List<UserModel> resultsByName = userRepository.searchByNameAndEmail("Lovelace");
-        List<UserModel> resultsByEmail = userRepository.searchByNameAndEmail("ada@example.com");
+        List<Integer> resultsByName = userRepository
+            .searchByNameAndEmail("Lovelace", PageRequest.of(0, 10)).getContent();
+        List<Integer> resultsByEmail = userRepository
+            .searchByNameAndEmail("ada@example.com", PageRequest.of(0, 10)).getContent();
 
-        assertThat(resultsByName).extracting(UserModel::getId).containsExactly(user.getId());
-        assertThat(resultsByEmail).extracting(UserModel::getId).containsExactly(user.getId());
+        assertThat(resultsByName).containsExactly(user.getId());
+        assertThat(resultsByEmail).containsExactly(user.getId());
     }
 }

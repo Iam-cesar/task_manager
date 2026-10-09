@@ -10,6 +10,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
@@ -49,6 +51,40 @@ class LabelServiceTest {
         assertSame(labels, labelService.findAll(null));
         assertSame(labels, labelService.findAll("   "));
         verify(labelRepository, times(2)).findAllWithTasks();
+    }
+
+    @Test
+    void findsPageOfLabelsWithoutSearchFilter() {
+        var urgent = new LabelModel(new CreateLabelDto("Urgent", "#FF0000"));
+        var lowPriority = new LabelModel(new CreateLabelDto("Low", "#00FF00"));
+        ReflectionTestUtils.setField(urgent, "id", 1);
+        ReflectionTestUtils.setField(lowPriority, "id", 2);
+        var page = new PageImpl<>(List.of(1, 2), PageRequest.of(0, 2), 3);
+        when(labelRepository.findAllIds(page.getPageable())).thenReturn(page);
+        when(labelRepository.findAllWithTasksByIdIn(List.of(1, 2)))
+            .thenReturn(List.of(lowPriority, urgent));
+
+        var result = labelService.findAll(null, page.getPageable());
+
+        assertEquals(List.of(urgent, lowPriority), result.getContent());
+        assertEquals(3, result.getTotalElements());
+        verify(labelRepository).findAllIds(page.getPageable());
+    }
+
+    @Test
+    void findsPageOfLabelsUsingSearchFilter() {
+        var urgent = new LabelModel(new CreateLabelDto("Urgent", "#FF0000"));
+        ReflectionTestUtils.setField(urgent, "id", 1);
+        var pageable = PageRequest.of(0, 2);
+        when(labelRepository.searchIdsByName("urgent", pageable))
+            .thenReturn(new PageImpl<>(List.of(1), pageable, 1));
+        when(labelRepository.findAllWithTasksByIdIn(List.of(1))).thenReturn(List.of(urgent));
+
+        var result = labelService.findAll("urgent", pageable);
+
+        assertEquals(List.of(urgent), result.getContent());
+        assertEquals(1, result.getTotalElements());
+        verify(labelRepository).searchIdsByName("urgent", pageable);
     }
 
     @Test

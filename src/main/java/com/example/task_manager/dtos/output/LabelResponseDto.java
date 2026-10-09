@@ -26,10 +26,10 @@ public class LabelResponseDto extends RepresentationModel<LabelResponseDto> {
 	private Instant created_at;
 
 	public LabelResponseDto(LabelModel aLabel) {
-		this(aLabel, true);
+		this(aLabel, false);
 	}
 
-	public LabelResponseDto(LabelModel aLabel, boolean includeTasks) {
+	public LabelResponseDto(LabelModel aLabel, boolean includeTasks ) {
 
 		BeanUtils.copyProperties(aLabel, this, "tasks");
 

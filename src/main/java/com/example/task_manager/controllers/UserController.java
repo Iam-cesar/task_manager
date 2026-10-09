@@ -4,10 +4,13 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 import java.net.URI;
-import java.util.List;
 
 import com.example.task_manager.helpers.ConvertRepresentationModel;
 import org.jspecify.annotations.NonNull;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.data.web.PagedModel;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -39,28 +42,29 @@ public class UserController {
     }
 
     @GetMapping
-    public ResponseEntity<List<UserResponseDto>> getAllUsers(
-	    @RequestParam(required = false) String search
-    ) {
+    public ResponseEntity<PagedModel<UserResponseDto>> getAllUsers(
+	    @RequestParam(required = false) String search,
+	    @PageableDefault(size = 10) final Pageable pageable
 
-        final List<UserResponseDto> users = ConvertRepresentationModel
-	        .toList(userService.findAll(search),  UserResponseDto::new);
+    ) {
+        final Page<UserResponseDto> users = ConvertRepresentationModel
+	        .toPageList(userService.findAll(search, pageable),  UserResponseDto::new);
 
         if  (!users.isEmpty()) {
-            for (UserResponseDto user : users) {
+            for (UserResponseDto user : users.getContent()) {
                 int id  = user.getId();
                 user.add(linkTo(methodOn(UserController.class).getUserById(id)).withSelfRel());
             }
         }
 
-        return ResponseEntity.ok(users);
+        return ResponseEntity.ok(new PagedModel<>(users));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<UserResponseDto> getUserById(@PathVariable int id)  {
 
         final var user = new UserResponseDto(userService.findById(id));
-        user.add(linkTo(methodOn(UserController.class).getAllUsers(null)).withRel("users"));
+        user.add(linkTo(methodOn(UserController.class).getAllUsers(null, null)).withRel("users"));
 
         return ResponseEntity.ok(user);
     }

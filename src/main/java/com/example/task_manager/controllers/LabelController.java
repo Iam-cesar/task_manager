@@ -8,12 +8,14 @@ import com.example.task_manager.services.LabelService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.NonNull;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.data.web.PagedModel;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
-import java.util.List;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
@@ -37,27 +39,28 @@ public class LabelController {
 	};
 
 	@GetMapping
-	public ResponseEntity<List<LabelResponseDto>> findAll(
-		@RequestParam(required = false) String search
+	public ResponseEntity<PagedModel<LabelResponseDto>> findAllLabels(
+		@RequestParam(required = false) String search,
+		@PageableDefault(size = 10) final Pageable pageable
 	) {
 		final var labels = ConvertRepresentationModel
-			.toList(labelService.findAll(search), LabelResponseDto::new);
+			.toPageList(labelService.findAll(search, pageable), LabelResponseDto::new);
 
 		if  (!labels.isEmpty()) {
-			for (LabelResponseDto label : labels) {
+			for (LabelResponseDto label : labels.getContent()) {
 				int id  = label.getId();
 				label.add(linkTo(methodOn(LabelController.class).findLabelById(id)).withSelfRel());
 			}
 		}
 
 
-		return ResponseEntity.ok(labels);
+		return ResponseEntity.ok(new PagedModel<>(labels));
 	}
 
 	@GetMapping("/{id}")
 	public ResponseEntity<LabelResponseDto> findLabelById(@PathVariable final int id) {
 
-		final var label = new LabelResponseDto(labelService.findById(id));
+		final var label = new LabelResponseDto(labelService.findById(id), true);
 
 		return ResponseEntity.ok(label);
 	}
